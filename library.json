@@ -1,0 +1,22 @@
+{
+  "name": "tinywot",
+  "version": "0.1.0",
+  "description": "A simple, light-weight Web of Thing (WoT) runtime library for resource-constrained devices",
+  "keywords": [
+    "webofthings"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lmy441900/tinywot"
+  },
+  "authors": [
+    {
+      "name": "Junde Yhi",
+      "email": "junde@yhi.moe",
+      "url": "https://www.yhi.moe",
+      "maintainer": true
+    }
+  ],
+  "license": "MIT",
+  "homepage": "https://tinywot.yhi.moe"
+}
