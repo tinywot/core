@@ -12,6 +12,10 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \brief Well-known operation types for the Web of Things.
  *
@@ -334,3 +338,7 @@ typedef struct {
  * - this method, when no handler can be found.
  */
 TinyWoTResponse tinywot_process_request(const TinyWoTConfig * const restrict config, const TinyWoTThing * const restrict thing, const TinyWoTRequest * const restrict request);
+
+#ifdef __cplusplus
+}
+#endif
