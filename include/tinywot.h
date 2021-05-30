@@ -1,0 +1,336 @@
+/**
+ * \file tinywot.h
+ * \brief TinyWoT public APIs.
+ *
+ * \copyright
+ * SPDX-FileCopyrightText: 2021 Junde Yhi <junde@yhi.moe>
+ * SPDX-License-Identifier: MIT
+ */
+
+#pragma once
+
+#include <stddef.h>
+#include <stdint.h>
+
+/**
+ * \brief Well-known operation types for the Web of Things.
+ *
+ * These are fixed operation types specified in [Table 1, WoT Architecture 1.1]
+ * (https://www.w3.org/TR/wot-architecture11/#table-operation-types), except
+ * #TINYWOT_OPERATION_TYPE_UNKNOWN, which is usually used in TinyWoT to denote
+ * an uninitialized #TinyWoTRequest.
+ *
+ * \sa TinyWoTRequest
+ */
+typedef enum {
+  /**
+   * \brief Unknown operation type.
+   *
+   * This is usually used to denote an uninitialized #TinyWoTRequest.
+   */
+  TINYWOT_OPERATION_TYPE_UNKNOWN = 0,
+
+  /**
+   * \brief Identifies the read operation on Property Affordances to retrieve
+   * the corresponding data.
+   */
+  TINYWOT_OPERATION_TYPE_READ_PROPERTY,
+
+  /**
+   * \brief Identifies the write operation on Property Affordances to update the
+   * corresponding data.
+   */
+  TINYWOT_OPERATION_TYPE_WRITE_PROPERTY,
+
+  /**
+   * \brief Identifies the observe operation on Property Affordances to be
+   * notified with the new data when the Property was updated.
+   */
+  TINYWOT_OPERATION_TYPE_OBSERVE_PROPERTY,
+
+  /**
+   * \brief Identifies the unobserve operation on Property Affordances to stop
+   * the corresponding notifications.
+   */
+  TINYWOT_OPERATION_TYPE_UNOBSERVE_PROPERTY,
+
+  /**
+   * \brief Identifies the invoke operation on Action Affordances to perform the
+   * corresponding action.
+   */
+  TINYWOT_OPERATION_TYPE_INVOKE_ACTION,
+
+  /**
+   * \brief Identifies the subscribe operation on Event Affordances to be
+   * notified by the Thing when the event occurs.
+   */
+  TINYWOT_OPERATION_TYPE_SUBSCRIBE_EVENT,
+
+  /**
+   * \brief Identifies the unsubscribe operation on Event Affordances to stop
+   * the corresponding notifications.
+   */
+  TINYWOT_OPERATION_TYPE_UNSUBSCRIBE_EVENT,
+
+  /**
+   * \brief Identifies the readallproperties operation on Things to retrieve the
+   * data of all Properties in a single interaction.
+   */
+  TINYWOT_OPERATION_TYPE_READ_ALL_PROPERTIES,
+
+  /**
+   * \brief Identifies the writeallproperties operation on Things to update the
+   * data of all writable Properties in a single interaction.
+   */
+  TINYWOT_OPERATION_TYPE_WRITE_ALL_PROPERTIES,
+
+  /**
+   * \brief Identifies the readmultipleproperties operation on Things to
+   * retrieve the data of selected Properties in a single interaction.
+   */
+  TINYWOT_OPERATION_TYPE_READ_MULTIPLE_PROPERTIES,
+
+  /**
+   * \brief Identifies the writemultipleproperties operation on Things to update
+   * the data of selected writable Properties in a single interaction.
+   */
+  TINYWOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES,
+} TinyWoTOperationType;
+
+/**
+ * \brief A received request.
+ *
+ * This can be compared to the [`Form`](https://www.w3.org/TR/wot-thing-
+ * description11/#form) type in WoT Thing Description.
+ */
+typedef struct {
+  /**
+   * \brief The type ("semantic intention") of the request.
+   */
+  TinyWoTOperationType op;
+
+  /**
+   * \brief The path to the resource that the request is querying.
+   *
+   * Unlike the [`Form`](https://www.w3.org/TR/wot-thing-description11/#form)
+   * type in WoT Thing Description, where a `href` of type `anyURI` is used,
+   * here only the path component is used. The other components (e.g. scheme,
+   * authority) should be handled by the protocol binding implementations.
+   */
+  char * restrict path;
+
+  /**
+   * \brief The type of #content in a MIME string.
+   */
+  char * restrict content_type;
+
+  /**
+   * \brief The size (in bytes) of #content.
+   */
+  size_t content_length;
+
+  /**
+   * \brief The content (payload) in the request.
+   *
+   * When a #content_reader is used instead, this must be set to `NULL`.
+   *
+   * \sa content_reader
+   */
+  void * restrict content;
+
+  /**
+   * \brief A callback function for consuming #content lazily.
+   *
+   * When #content is used instead, this must be set to `NULL`.
+   *
+   * \param[inout] buf Where the content should be placed.
+   * \param[in] buf_size The maximum size of #buf.
+   * \param[out] remaining The remaining content length (in bytes).
+   * \return Bytes read.
+   * \sa content
+   */
+  size_t (*content_reader)(void * const restrict buf, const size_t buf_size, size_t * const restrict remaining);
+} TinyWoTRequest;
+
+/**
+ * \brief Status of operations returned by handlers.
+ *
+ * \sa TinyWoTResponse
+ */
+typedef enum {
+  /**
+   * \brief Unknown status.
+   *
+   * This is usually used to indicate an uninitialized #TinyWoTResponse.
+   * Handlers should not return this.
+   */
+  TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
+
+  /**
+   * \brief The handler has successfully processed a request.
+   *
+   * This can be compared to a `HTTP 200 OK`.
+   */
+  TINYWOT_RESPONSE_STATUS_OK,
+
+  /**
+   * \brief The handler doesn't know how to process a request.
+   *
+   * This will also be returned by TinyWoT when no handler can be found. This
+   * can be compared to a `HTTP 404 Not Found`.
+   */
+  TINYWOT_RESPONSE_STATUS_UNSUPPORTED,
+
+  /**
+   * \brief The handler has failed to process a request.
+   *
+   * This can be compared to a `HTTP 500 Internal Server Error`.
+   */
+  TINYWOT_RESPONSE_STATUS_ERROR,
+} TinyWoTResponseStatus;
+
+/**
+ * \brief A response to a request.
+ *
+ * \sa TinyWoTRequest
+ */
+typedef struct {
+  /**
+   * \brief The status of the request.
+   */
+  TinyWoTResponseStatus status;
+
+  /**
+   * \brief The type of #content.
+   */
+  char * restrict content_type;
+
+  /**
+   * The length of #content.
+   */
+  size_t content_length;
+
+  /**
+   * \brief The content (payload).
+   *
+   * When a #content_reader is used instead, this must be set to `NULL`.
+   *
+   * \sa content_reader
+   */
+  void * restrict content;
+
+  /**
+   * \brief A callback function for consuming #content lazily.
+   *
+   * When #content is used instead, this must be set to `NULL`.
+   *
+   * \param[inout] buf Where the content should be placed.
+   * \param[in] buf_size The maximum size of #buf.
+   * \param[out] remaining The remaining content length (in bytes).
+   * \return Bytes read.
+   * \sa content
+   */
+  size_t (*content_reader)(void * const restrict buf, const size_t buf_size, size_t * const restrict remaining);
+} TinyWoTResponse;
+
+/**
+ * \brief An association of a TinyWoTRequest::path and a handler.
+ */
+typedef struct {
+  /**
+   * \brief The path to resource, which can be handled by #func.
+   */
+  const char * const restrict path;
+
+  /**
+   * \brief The function to handle resource at #path.
+   */
+  TinyWoTResponse (* const func)(const TinyWoTRequest * const restrict request);
+} TinyWoTHandler;
+
+/**
+ * \brief A (Web) Thing.
+ */
+typedef struct {
+  /**
+   * \brief The serialized [WoT Thing Description](https://www.w3.org/TR/wot-
+   * thing-description11/).
+   *
+   * This will be directly sent by TinyWoT without any validation upon a request
+   * to `/.well-known/wot-thing-description`.
+   */
+  const char * restrict td;
+
+  /**
+   * \brief Handlers for property reads.
+   */
+  const TinyWoTHandler * restrict property_read_handlers;
+
+  /**
+   * \brief The size of #property_read_handlers.
+   */
+  size_t property_read_handlers_size;
+
+  /**
+   * \brief Handlers for property writes.
+   */
+  const TinyWoTHandler * restrict property_write_handlers;
+
+  /**
+   * \brief The size of #property_write_handlers.
+   */
+  size_t property_write_handlers_size;
+
+  /**
+   * \brief Handlers for action invocations.
+   */
+  const TinyWoTHandler * restrict action_handlers;
+
+  /**
+   * \brief The size of #action_handlers.
+   */
+  size_t action_handlers_size;
+} TinyWoTThing;
+
+/**
+ * \brief A configuration object consisting of several platform-specific
+ * interfaces.
+ *
+ * TinyWoT is platform-agnostic. However, there are situations where external
+ * functions need to be used. To allow flexibility, they need to be supplied to
+ * TinyWoT dynamically.
+ */
+typedef struct {
+  /**
+   * \brief String comparison function.
+   *
+   * The signature is identical to the `strcmp` in standard C library. The
+   * reason you need to supply this to TinyWoT is that you may want to utilize
+   * the program space on some platforms (e.g. AVR8) to store strings to save
+   * the precious RAM space. In this case, a special `strcmp` needs to be used.
+   * `lhs` will be in the RAM and `rhs` will be in the program space. If there
+   * is no need of using program-space-specific `strcmp`, just supply a standard
+   * `strcmp` here.
+   */
+  int (* strcmp)(const char * lhs, const char * rhs);
+
+  /**
+   * \brief Memory copying function.
+   *
+   * The reason for supplying this function is the same as #strcmp. `dest` will
+   * be in the RAM and `src` will be in the program space.
+   */
+  void * (* memcpy)(void * restrict dest, const void * restrict src, size_t count);
+} TinyWoTConfig;
+
+/**
+ * \brief Process a `request` to `thing` using `config`.
+ *
+ * \param[in] config  Configuration for TinyWoT to work.
+ * \param[in] thing   The Thing to expose.
+ * \param[in] request The request received from protocol binding libraries.
+ * \return A response returned by either:
+ * - the handler, when a handler can be found.
+ * - this method, when no handler can be found.
+ */
+TinyWoTResponse tinywot_process_request(const TinyWoTConfig * const restrict config, const TinyWoTThing * const restrict thing, const TinyWoTRequest * const restrict request);
