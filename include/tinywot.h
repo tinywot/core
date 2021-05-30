@@ -286,15 +286,6 @@ typedef struct {
  */
 typedef struct {
   /**
-   * \brief The serialized [WoT Thing Description](https://www.w3.org/TR/wot-
-   * thing-description11/).
-   *
-   * This will be directly sent by TinyWoT without any validation upon a request
-   * to `/.well-known/wot-thing-description`.
-   */
-  const char * TINYWOT_RESTRICT td;
-
-  /**
    * \brief Handlers for property reads.
    */
   const TinyWoTHandler * TINYWOT_RESTRICT property_read_handlers;
