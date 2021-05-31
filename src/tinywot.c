@@ -11,48 +11,18 @@
 
 TinyWoTResponse tinywot_process_request(const TinyWoTConfig * const config, const TinyWoTThing * const thing, const TinyWoTRequest * const request)
 {
-  TinyWoTResponse ret = {0};
+  TinyWoTResponse response = {0};
 
-  switch (request->op) {
-    case TINYWOT_OPERATION_TYPE_READ_PROPERTY:
-      for (size_t i = 0; i < thing->property_read_handlers_size; i++) {
-        const TinyWoTHandler * const handler = &(thing->property_read_handlers[i]);
+  for (size_t i = 0; i < thing->handlers_size; i++) {
+    const TinyWoTHandler * const handler = &(thing->handlers[i]);
 
-        if (config->strcmp(request->path, handler->path) == 0) {
-          ret = handler->func(request);
-          break;
-        }
-      }
-      break;
-
-    case TINYWOT_OPERATION_TYPE_WRITE_PROPERTY:
-      for (size_t i = 0; i < thing->property_write_handlers_size; i++) {
-        const TinyWoTHandler * const handler = &(thing->property_write_handlers[i]);
-
-        if (config->strcmp(request->path, handler->path) == 0) {
-          ret = handler->func(request);
-          break;
-        }
-      }
-      break;
-
-    case TINYWOT_OPERATION_TYPE_INVOKE_ACTION:
-      for (size_t i = 0; i < thing->action_handlers_size; i++) {
-        const TinyWoTHandler * const handler = &(thing->action_handlers[i]);
-
-        if (config->strcmp(request->path, handler->path) == 0) {
-          ret = handler->func(request);
-          break;
-        }
-      }
-      break;
-
-    default:
-      break;
+    if ((config->strcmp(request->path, handler->path) == 0) && (request->op & handler->ops)) {
+      response = handler->func(request);
+    }
   }
 
-  if (ret.status == TINYWOT_RESPONSE_STATUS_UNKNOWN)
-    ret.status = TINYWOT_RESPONSE_STATUS_UNSUPPORTED;
+  if (response.status == TINYWOT_RESPONSE_STATUS_UNKNOWN)
+    response.status = TINYWOT_RESPONSE_STATUS_UNSUPPORTED;
 
-  return ret;
+  return response;
 }
