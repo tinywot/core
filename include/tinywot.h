@@ -178,11 +178,12 @@ typedef struct {
    *
    * \param[inout] buf Where the content should be placed.
    * \param[in] buf_size The maximum size of #buf.
+   * \param[in] from From which byte should this call read from.
    * \param[out] remaining The remaining content length (in bytes).
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(void * const TINYWOT_RESTRICT buf, const size_t buf_size, size_t * const TINYWOT_RESTRICT remaining);
+  size_t (*content_reader)(void * const TINYWOT_RESTRICT buf, const size_t buf_size, const size_t from, size_t * const TINYWOT_RESTRICT remaining);
 } TinyWoTRequest;
 
 /**
@@ -259,11 +260,12 @@ typedef struct {
    *
    * \param[inout] buf Where the content should be placed.
    * \param[in] buf_size The maximum size of #buf.
+   * \param[in] from From which byte should this call read from.
    * \param[out] remaining The remaining content length (in bytes).
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(void * const TINYWOT_RESTRICT buf, const size_t buf_size, size_t * const TINYWOT_RESTRICT remaining);
+  size_t (*content_reader)(void * const TINYWOT_RESTRICT buf, const size_t buf_size, const size_t from, size_t * const TINYWOT_RESTRICT remaining);
 } TinyWoTResponse;
 
 /**
