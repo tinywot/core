@@ -121,12 +121,12 @@ typedef struct {
    * here only the path component is used. The other components (e.g. scheme,
    * authority) should be handled by the protocol binding implementations.
    */
-  char * path;
+  const char * path;
 
   /**
    * \brief The type of #content in a MIME string.
    */
-  char * content_type;
+  const char * content_type;
 
   /**
    * \brief The size (in bytes) of #content.
@@ -199,7 +199,7 @@ typedef struct {
   /**
    * \brief The type of #content.
    */
-  char * content_type;
+  const char * content_type;
 
   /**
    * The length of #content.
@@ -213,7 +213,7 @@ typedef struct {
    *
    * \sa content_reader
    */
-  unsigned char * content;
+  const unsigned char * content;
 
   /**
    * \brief A callback function for consuming #content lazily.
