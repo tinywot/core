@@ -332,10 +332,16 @@ typedef struct {
   int (* strcmp)(const char * lhs, const char * rhs);
 
   /**
+   * \brief String length computation function.
+   *
+   * The reason for supplying this function is the same as #strcmp.
+   */
+  size_t (* strlen)(const char * str);
+
+  /**
    * \brief Memory copying function.
    *
-   * The reason for supplying this function is the same as #strcmp. `dest` will
-   * be in the RAM and `src` will be in the program space.
+   * The reason for supplying this function is the same as #strcmp.
    */
   void * (* memcpy)(void * TINYWOT_RESTRICT dest, const void * TINYWOT_RESTRICT src, size_t count);
 } TinyWoTConfig;
