@@ -145,7 +145,7 @@ typedef struct {
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(void * const buf, const size_t buf_size, const size_t from, size_t * const remaining);
+  size_t (*content_reader)(unsigned char * const buf, const size_t buf_size, const size_t from, size_t * const remaining);
 } TinyWoTRequest;
 
 /**
@@ -213,7 +213,7 @@ typedef struct {
    *
    * \sa content_reader
    */
-  void * content;
+  unsigned char * content;
 
   /**
    * \brief A callback function for consuming #content lazily.
@@ -227,7 +227,7 @@ typedef struct {
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(void * const buf, const size_t buf_size, const size_t from, size_t * const remaining);
+  size_t (*content_reader)(unsigned char * const buf, const size_t buf_size, const size_t from, size_t * const remaining);
 } TinyWoTResponse;
 
 /**
