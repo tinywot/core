@@ -121,12 +121,12 @@ typedef struct {
    * here only the path component is used. The other components (e.g. scheme,
    * authority) should be handled by the protocol binding implementations.
    */
-  const char * path;
+  const char *path;
 
   /**
    * \brief The type of #content in a MIME string.
    */
-  const char * content_type;
+  const char *content_type;
 
   /**
    * \brief The size (in bytes) of #content.
@@ -145,7 +145,8 @@ typedef struct {
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(unsigned char * const buf, const size_t buf_size, const size_t from, size_t * const remaining);
+  size_t (*content_reader)(unsigned char *const buf, const size_t buf_size,
+                           const size_t from, size_t *const remaining);
 } TinyWoTRequest;
 
 /**
@@ -199,7 +200,7 @@ typedef struct {
   /**
    * \brief The type of #content.
    */
-  const char * content_type;
+  const char *content_type;
 
   /**
    * The length of #content.
@@ -213,7 +214,7 @@ typedef struct {
    *
    * \sa content_reader
    */
-  const unsigned char * content;
+  const unsigned char *content;
 
   /**
    * \brief A callback function for consuming #content lazily.
@@ -227,7 +228,8 @@ typedef struct {
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(unsigned char * const buf, const size_t buf_size, const size_t from, size_t * const remaining);
+  size_t (*content_reader)(unsigned char *const buf, const size_t buf_size,
+                           const size_t from, size_t *const remaining);
 } TinyWoTResponse;
 
 /**
@@ -242,7 +244,7 @@ typedef struct {
   /**
    * \brief The path to a resource that #func can handle.
    */
-  const char * path;
+  const char *path;
 
   /**
    * \brief The operation types that #func can accept.
@@ -252,7 +254,8 @@ typedef struct {
    * property read and property write operations:
    *
    * ```
-   * .ops = TINYWOT_OPERATION_TYPE_READ_PROPERTY | TINYWOT_OPERATION_TYPE_WRITE_PROPERTY
+   * .ops = TINYWOT_OPERATION_TYPE_READ_PROPERTY |
+   * TINYWOT_OPERATION_TYPE_WRITE_PROPERTY
    * ```
    */
   const TinyWoTOperationType ops;
@@ -263,7 +266,7 @@ typedef struct {
    * \param[in] request The incoming request.
    * \return A response to send back.
    */
-  TinyWoTResponse (* func)(const TinyWoTRequest * const request);
+  TinyWoTResponse (*func)(const TinyWoTRequest *const request);
 } TinyWoTHandler;
 
 /**
@@ -274,7 +277,7 @@ typedef struct {
    * \brief A list of handlers implementing the behavior (the Thing Description)
    * of the Thing.
    */
-  const TinyWoTHandler * handlers;
+  const TinyWoTHandler *handlers;
 
   /**
    * \brief The size of #handlers.
@@ -302,21 +305,21 @@ typedef struct {
    * is no need of using program-space-specific `strcmp`, just supply a standard
    * `strcmp` here.
    */
-  int (* strcmp)(const char * lhs, const char * rhs);
+  int (*strcmp)(const char *lhs, const char *rhs);
 
   /**
    * \brief String length computation function.
    *
    * The reason for supplying this function is the same as #strcmp.
    */
-  size_t (* strlen)(const char * str);
+  size_t (*strlen)(const char *str);
 
   /**
    * \brief Memory copying function.
    *
    * The reason for supplying this function is the same as #strcmp.
    */
-  void * (* memcpy)(void * dest, const void * src, size_t count);
+  void *(*memcpy)(void *dest, const void *src, size_t count);
 } TinyWoTConfig;
 
 /**
@@ -329,7 +332,9 @@ typedef struct {
  * - the handler, when a handler can be found.
  * - this method, when no handler can be found.
  */
-TinyWoTResponse tinywot_process_request(const TinyWoTConfig * const config, const TinyWoTThing * const thing, const TinyWoTRequest * const request);
+TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
+                                        const TinyWoTThing *const thing,
+                                        const TinyWoTRequest *const request);
 
 #ifdef __cplusplus
 }
