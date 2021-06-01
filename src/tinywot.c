@@ -20,6 +20,7 @@ TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
     if ((config->strcmp(request->path, handler->path) == 0) &&
         (request->op & handler->ops)) {
       response = handler->func(request);
+      break;
     }
   }
 
