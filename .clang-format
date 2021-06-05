@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 BasedOnStyle: LLVM
+AlignEscapedNewlines: DontAlign
 ConstructorInitializerIndentWidth: 2
 ContinuationIndentWidth: 2
 IndentCaseLabels: true
