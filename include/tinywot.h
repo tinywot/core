@@ -134,6 +134,15 @@ typedef struct {
   size_t content_length;
 
   /**
+   * \brief The content (payload).
+   *
+   * When a #content_reader is used instead, this must be set to `NULL`.
+   *
+   * \sa content_reader
+   */
+  const unsigned char *content;
+
+  /**
    * \brief A callback function for consuming #content lazily.
    *
    * When #content is used instead, this must be set to `NULL`.
