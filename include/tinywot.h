@@ -193,6 +193,15 @@ typedef enum {
    * This can be compared to a `HTTP 500 Internal Server Error`.
    */
   TINYWOT_RESPONSE_STATUS_ERROR,
+
+  /**
+   * \brief No handler is implemented for the request at the matched path.
+   *
+   * This can be compared to a `HTTP 501 Not Implemented`. If there is an entry
+   * in TinyWoTThing::handlers matches the incoming request, but with its
+   * TinyWoTHandler::func being NULL, then this will be returned by TinyWoT too.
+   */
+  TINYWOT_RESPONSE_STATUS_NOT_IMPLEMENTED,
 } TinyWoTResponseStatus;
 
 /**

@@ -19,7 +19,11 @@ TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
 
     if ((config->strcmp(request->path, handler->path) == 0) &&
         (request->op & handler->ops)) {
-      response = handler->func(request);
+      if (handler->func) {
+        response = handler->func(request);
+      } else {
+        response.status = TINYWOT_RESPONSE_STATUS_NOT_IMPLEMENTED;
+      }
       break;
     }
   }
