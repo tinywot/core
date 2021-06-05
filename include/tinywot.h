@@ -296,6 +296,11 @@ typedef struct {
    * \return A response to send back.
    */
   TinyWoTResponse (*func)(const TinyWoTRequest *const request);
+
+  /**
+   * \brief Arbitrary user data (context) to pass to the handler when invoked.
+   */
+  void *ctx;
 } TinyWoTHandler;
 
 /**
