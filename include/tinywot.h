@@ -198,6 +198,13 @@ typedef enum {
   TINYWOT_RESPONSE_STATUS_OK,
 
   /**
+   * \brief The handler thinks the request is malformed.
+   *
+   * This can be compared to a `HTTP 400 Bad Request`.
+   */
+  TINYWOT_RESPONSE_STATUS_BAD_REQUEST,
+
+  /**
    * \brief The handler doesn't know how to process a request.
    *
    * This will also be returned by TinyWoT when no handler can be found. This
