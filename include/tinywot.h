@@ -124,7 +124,6 @@ typedef struct {
    * \sa TinyWoTOperationType
    */
   uint32_t op;
-
   /**
    * \brief The path to the resource that the request is querying.
    *
@@ -134,17 +133,14 @@ typedef struct {
    * authority) should be handled by the protocol binding implementations.
    */
   const char *path;
-
   /**
    * \brief The type of #content in a MIME string.
    */
   TinyWoTContentType content_type;
-
   /**
    * \brief The size (in bytes) of #content.
    */
   size_t content_length;
-
   /**
    * \brief The content (payload).
    *
@@ -153,7 +149,6 @@ typedef struct {
    * \sa content_reader
    */
   const uint8_t *content;
-
   /**
    * \brief A callback function for consuming #content lazily.
    *
@@ -183,21 +178,18 @@ typedef enum {
    * Handlers should not return this.
    */
   TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
-
   /**
    * \brief The handler has successfully processed a request.
    *
    * This can be compared to a `HTTP 200 OK`.
    */
   TINYWOT_RESPONSE_STATUS_OK,
-
   /**
    * \brief The handler thinks the request is malformed.
    *
    * This can be compared to a `HTTP 400 Bad Request`.
    */
   TINYWOT_RESPONSE_STATUS_BAD_REQUEST,
-
   /**
    * \brief The handler doesn't know how to process a request.
    *
@@ -205,7 +197,6 @@ typedef enum {
    * can be compared to a `HTTP 404 Not Found`.
    */
   TINYWOT_RESPONSE_STATUS_UNSUPPORTED,
-
   /**
    * \brief The handler cannot accept the incoming method.
    *
@@ -216,14 +207,12 @@ typedef enum {
    * invoking the handler function.
    */
   TINYWOT_RESPONSE_STATUS_METHOD_NOT_ALLOWED,
-
   /**
    * \brief The handler has failed to process a request.
    *
    * This can be compared to a `HTTP 500 Internal Server Error`.
    */
   TINYWOT_RESPONSE_STATUS_ERROR,
-
   /**
    * \brief No handler is implemented for the request at the matched path.
    *
@@ -244,17 +233,14 @@ typedef struct {
    * \brief The status of the request.
    */
   TinyWoTResponseStatus status;
-
   /**
    * \brief The type of #content.
    */
   TinyWoTContentType content_type;
-
   /**
    * The length of #content.
    */
   size_t content_length;
-
   /**
    * \brief The content (payload).
    *
@@ -263,7 +249,6 @@ typedef struct {
    * \sa content_reader
    */
   const uint8_t *content;
-
   /**
    * \brief A callback function for consuming #content lazily.
    *
@@ -293,7 +278,6 @@ typedef struct {
    * \brief The path to a resource that #func can handle.
    */
   const char *path;
-
   /**
    * \brief The operation types that #func can accept.
    *
@@ -309,7 +293,6 @@ typedef struct {
    * \sa TinyWoTOperationType
    */
   const uint32_t ops;
-
   /**
    * \brief The function to handle #ops at #path.
    *
@@ -317,7 +300,6 @@ typedef struct {
    * \return A response to send back.
    */
   TinyWoTResponse (*func)(const TinyWoTRequest *const request);
-
   /**
    * \brief Arbitrary user data (context) to pass to the handler when invoked.
    */
@@ -333,7 +315,6 @@ typedef struct {
    * of the Thing.
    */
   const TinyWoTHandler *handlers;
-
   /**
    * \brief The size of #handlers.
    */
@@ -361,14 +342,12 @@ typedef struct {
    * `strcmp` here.
    */
   int (*strcmp)(const char *lhs, const char *rhs);
-
   /**
    * \brief String length computation function.
    *
    * The reason for supplying this function is the same as #strcmp.
    */
   size_t (*strlen)(const char *str);
-
   /**
    * \brief Memory copying function.
    *
