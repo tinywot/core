@@ -17,6 +17,7 @@ extern "C" {
 #endif
 
 /**
+ * \defgroup TinyWoTOperationType
  * \brief Well-known operation types for the Web of Things.
  *
  * These are fixed operation types specified in [Table 1, WoT Architecture 1.1]
@@ -25,81 +26,73 @@ extern "C" {
  * an uninitialized #TinyWoTRequest.
  *
  * \sa TinyWoTRequest
+ *
+ * @{
  */
-typedef enum {
-  /**
-   * \brief Unknown operation type.
-   *
-   * This is usually used to denote an uninitialized #TinyWoTRequest.
-   */
-  TINYWOT_OPERATION_TYPE_UNKNOWN = 0x00,
 
-  /**
-   * \brief Identifies the read operation on Property Affordances to retrieve
-   * the corresponding data.
-   */
-  TINYWOT_OPERATION_TYPE_READ_PROPERTY = 0x01,
+/**
+ * \brief Unknown operation type.
+ *
+ * This is usually used to denote an uninitialized #TinyWoTRequest.
+ */
+#define TINYWOT_OPERATION_TYPE_UNKNOWN 0x0000
+/**
+ * \brief Identifies the read operation on Property Affordances to retrieve
+ * the corresponding data.
+ */
+#define TINYWOT_OPERATION_TYPE_READ_PROPERTY 0x0001
+/**
+ * \brief Identifies the write operation on Property Affordances to update the
+ * corresponding data.
+ */
+#define TINYWOT_OPERATION_TYPE_WRITE_PROPERTY 0x0002
+/**
+ * \brief Identifies the observe operation on Property Affordances to be
+ * notified with the new data when the Property was updated.
+ */
+#define TINYWOT_OPERATION_TYPE_OBSERVE_PROPERTY 0x0004
+/**
+ * \brief Identifies the unobserve operation on Property Affordances to stop
+ * the corresponding notifications.
+ */
+#define TINYWOT_OPERATION_TYPE_UNOBSERVE_PROPERTY 0x0008
+/**
+ * \brief Identifies the invoke operation on Action Affordances to perform the
+ * corresponding action.
+ */
+#define TINYWOT_OPERATION_TYPE_INVOKE_ACTION 0x0010
+/**
+ * \brief Identifies the subscribe operation on Event Affordances to be
+ * notified by the Thing when the event occurs.
+ */
+#define TINYWOT_OPERATION_TYPE_SUBSCRIBE_EVENT 0x0020
+/**
+ * \brief Identifies the unsubscribe operation on Event Affordances to stop
+ * the corresponding notifications.
+ */
+#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBE_EVENT 0x0040
+/**
+ * \brief Identifies the readallproperties operation on Things to retrieve the
+ * data of all Properties in a single interaction.
+ */
+#define TINYWOT_OPERATION_TYPE_READ_ALL_PROPERTIES 0x0100
+/**
+ * \brief Identifies the writeallproperties operation on Things to update the
+ * data of all writable Properties in a single interaction.
+ */
+#define TINYWOT_OPERATION_TYPE_WRITE_ALL_PROPERTIES 0x0200
+/**
+ * \brief Identifies the readmultipleproperties operation on Things to
+ * retrieve the data of selected Properties in a single interaction.
+ */
+#define TINYWOT_OPERATION_TYPE_READ_MULTIPLE_PROPERTIES 0x1100
+/**
+ * \brief Identifies the writemultipleproperties operation on Things to update
+ * the data of selected writable Properties in a single interaction.
+ */
+#define TINYWOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES 0x2000
 
-  /**
-   * \brief Identifies the write operation on Property Affordances to update the
-   * corresponding data.
-   */
-  TINYWOT_OPERATION_TYPE_WRITE_PROPERTY = 0x02,
-
-  /**
-   * \brief Identifies the observe operation on Property Affordances to be
-   * notified with the new data when the Property was updated.
-   */
-  TINYWOT_OPERATION_TYPE_OBSERVE_PROPERTY = 0x04,
-
-  /**
-   * \brief Identifies the unobserve operation on Property Affordances to stop
-   * the corresponding notifications.
-   */
-  TINYWOT_OPERATION_TYPE_UNOBSERVE_PROPERTY = 0x08,
-
-  /**
-   * \brief Identifies the invoke operation on Action Affordances to perform the
-   * corresponding action.
-   */
-  TINYWOT_OPERATION_TYPE_INVOKE_ACTION = 0x10,
-
-  /**
-   * \brief Identifies the subscribe operation on Event Affordances to be
-   * notified by the Thing when the event occurs.
-   */
-  TINYWOT_OPERATION_TYPE_SUBSCRIBE_EVENT = 0x20,
-
-  /**
-   * \brief Identifies the unsubscribe operation on Event Affordances to stop
-   * the corresponding notifications.
-   */
-  TINYWOT_OPERATION_TYPE_UNSUBSCRIBE_EVENT = 0x40,
-
-  /**
-   * \brief Identifies the readallproperties operation on Things to retrieve the
-   * data of all Properties in a single interaction.
-   */
-  TINYWOT_OPERATION_TYPE_READ_ALL_PROPERTIES = 0xf1,
-
-  /**
-   * \brief Identifies the writeallproperties operation on Things to update the
-   * data of all writable Properties in a single interaction.
-   */
-  TINYWOT_OPERATION_TYPE_WRITE_ALL_PROPERTIES = 0xf2,
-
-  /**
-   * \brief Identifies the readmultipleproperties operation on Things to
-   * retrieve the data of selected Properties in a single interaction.
-   */
-  TINYWOT_OPERATION_TYPE_READ_MULTIPLE_PROPERTIES = 0xe1,
-
-  /**
-   * \brief Identifies the writemultipleproperties operation on Things to update
-   * the data of selected writable Properties in a single interaction.
-   */
-  TINYWOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES = 0xe2,
-} TinyWoTOperationType;
+/** @} */
 
 /**
  * \brief Content types / formats that TinyWoT expects.
@@ -128,8 +121,9 @@ typedef enum {
 typedef struct {
   /**
    * \brief The type ("semantic intention") of the request.
+   * \sa TinyWoTOperationType
    */
-  TinyWoTOperationType op;
+  uint32_t op;
 
   /**
    * \brief The path to the resource that the request is querying.
@@ -311,8 +305,10 @@ typedef struct {
    * .ops = TINYWOT_OPERATION_TYPE_READ_PROPERTY |
    * TINYWOT_OPERATION_TYPE_WRITE_PROPERTY
    * ```
+   *
+   * \sa TinyWoTOperationType
    */
-  const TinyWoTOperationType ops;
+  const uint32_t ops;
 
   /**
    * \brief The function to handle #ops at #path.
