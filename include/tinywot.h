@@ -188,6 +188,17 @@ typedef enum {
   TINYWOT_RESPONSE_STATUS_UNSUPPORTED,
 
   /**
+   * \brief The handler cannot accept the incoming method.
+   *
+   * This can be compared to a `HTTP 405 Method Not Allowed`. Note that handler
+   * implementors do not usually return this; instead, since TinyWoTHandler::
+   * ops have already declared the acceptable interaction affordances of the
+   * corresponding handler, TinyWoT will directly return this instead of
+   * invoking the handler function.
+   */
+  TINYWOT_RESPONSE_STATUS_METHOD_NOT_ALLOWED,
+
+  /**
    * \brief The handler has failed to process a request.
    *
    * This can be compared to a `HTTP 500 Internal Server Error`.

@@ -17,15 +17,23 @@ TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
   for (size_t i = 0; i < thing->handlers_size; i++) {
     const TinyWoTHandler *const handler = &(thing->handlers[i]);
 
-    if ((config->strcmp(request->path, handler->path) == 0) &&
-        (request->op & handler->ops)) {
-      if (handler->func) {
-        response = handler->func(request);
-      } else {
-        response.status = TINYWOT_RESPONSE_STATUS_NOT_IMPLEMENTED;
-      }
+    if (config->strcmp(request->path, handler->path) != 0) {
+      continue;
+    }
+
+    if (!(request->op & handler->ops)) {
+      response.status = TINYWOT_RESPONSE_STATUS_METHOD_NOT_ALLOWED;
       break;
     }
+
+    if (!handler->func) {
+      response.status = TINYWOT_RESPONSE_STATUS_NOT_IMPLEMENTED;
+      break;
+    }
+
+    response = handler->func(request);
+
+    break;
   }
 
   if (response.status == TINYWOT_RESPONSE_STATUS_UNKNOWN)
