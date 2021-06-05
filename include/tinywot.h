@@ -22,8 +22,8 @@ extern "C" {
  *
  * These are fixed operation types specified in [Table 1, WoT Architecture 1.1]
  * (https://www.w3.org/TR/wot-architecture11/#table-operation-types), except
- * #TINYWOT_OPERATION_TYPE_UNKNOWN, which is usually used in TinyWoT to denote
- * an uninitialized #TinyWoTRequest.
+ * TINYWOT_OPERATION_TYPE_UNKNOWN, which is used in TinyWoT to denote an
+ * uninitialized TinyWoTRequest.
  *
  * \sa TinyWoTRequest
  *
@@ -33,7 +33,7 @@ extern "C" {
 /**
  * \brief Unknown operation type.
  *
- * This is usually used to denote an uninitialized #TinyWoTRequest.
+ * This is usually used to denote an uninitialized TinyWoTRequest.
  */
 #define TINYWOT_OPERATION_TYPE_UNKNOWN 0x0000
 /**
@@ -100,7 +100,7 @@ extern "C" {
  * These values are picked from the [CoAP Content-Formats Registry](https://
  * datatracker.ietf.org/doc/html/rfc7252#section-12.3). IoT devices more or
  * less want to use one of them. The additional one,
- * #TINYWOT_CONTENT_TYPE_TD_JSON, is proposed in WoT Thing Description [here](
+ * TINYWOT_CONTENT_TYPE_TD_JSON, is proposed in WoT Thing Description [here](
  * https://www.w3.org/TR/wot-thing-description11/#content-format-section) and
  * have registered in the [IANA registry](https://www.iana.org/assignments/
  * core-parameters/core-parameters.xhtml#content-formats).
@@ -144,18 +144,16 @@ typedef struct {
   /**
    * \brief The content (payload).
    *
-   * When a #content_reader is used instead, this must be set to `NULL`.
-   *
-   * \sa content_reader
+   * When a #content_reader is used instead, this must be set to NULL.
    */
   const uint8_t *content;
   /**
-   * \brief A callback function for consuming #content lazily.
+   * \brief A callback function for consuming the content lazily.
    *
-   * When #content is used instead, this must be set to `NULL`.
+   * When #content is used instead, this must be set to NULL.
    *
    * \param[inout] buf Where the content should be placed.
-   * \param[in] buf_size The maximum size of #buf.
+   * \param[in] buf_size The maximum size of buf.
    * \param[in] from From which byte should this call read from.
    * \param[out] remaining The remaining content length (in bytes).
    * \return Bytes read.
@@ -174,8 +172,7 @@ typedef enum {
   /**
    * \brief Unknown status.
    *
-   * This is usually used to indicate an uninitialized #TinyWoTResponse.
-   * Handlers should not return this.
+   * This is used to indicate an uninitialized TinyWoTResponse.
    */
   TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
   /**
@@ -193,16 +190,16 @@ typedef enum {
   /**
    * \brief The handler doesn't know how to process a request.
    *
-   * This will also be returned by TinyWoT when no handler can be found. This
-   * can be compared to a `HTTP 404 Not Found`.
+   * This can be compared to a `HTTP 404 Not Found`. This will also be returned
+   * by TinyWoT when no handler can be found.
    */
   TINYWOT_RESPONSE_STATUS_UNSUPPORTED,
   /**
    * \brief The handler cannot accept the incoming method.
    *
    * This can be compared to a `HTTP 405 Method Not Allowed`. Note that handler
-   * implementors do not usually return this; instead, since TinyWoTHandler::
-   * ops have already declared the acceptable interaction affordances of the
+   * implementors do not usually return this; instead, since TinyWoTHandler::ops
+   * have already declared the acceptable interaction affordances of the
    * corresponding handler, TinyWoT will directly return this instead of
    * invoking the handler function.
    */
@@ -238,13 +235,13 @@ typedef struct {
    */
   TinyWoTContentType content_type;
   /**
-   * The length of #content.
+   * \brief The length of #content.
    */
   size_t content_length;
   /**
    * \brief The content (payload).
    *
-   * When a #content_reader is used instead, this must be set to `NULL`.
+   * When a #content_reader is used instead, this must be set to NULL.
    *
    * \sa content_reader
    */
@@ -252,7 +249,7 @@ typedef struct {
   /**
    * \brief A callback function for consuming #content lazily.
    *
-   * When #content is used instead, this must be set to `NULL`.
+   * When #content is used instead, this must be set to NULL.
    *
    * \param[inout] buf Where the content should be placed.
    * \param[in] buf_size The maximum size of #buf.
@@ -268,10 +265,10 @@ typedef struct {
 /**
  * \brief A tuple identifying a handler to an incoming request.
  *
- * This is used in #TinyWoTThing to describe what kinds of request it can
- * accept. An incoming #TinyWoTRequest will be matched on #path and #ops. If
- * #path matches and #ops has the incoming #TinyWoTOperationType bit set, then
- * the corresponding #func is invoked with the request.
+ * This is used in TinyWoTThing to describe what kinds of request it can accept.
+ * An incoming TinyWoTRequest will be matched on #path and #ops. If #path
+ * matches and #ops has the incoming TinyWoTOperationType bit set, then the
+ * corresponding #func is invoked with the request and the #ctx provided.
  */
 typedef struct {
   /**
@@ -281,7 +278,7 @@ typedef struct {
   /**
    * \brief The operation types that #func can accept.
    *
-   * Except "all" and "multiple" types, #TinyWoTOperationType value can be
+   * Except "all" and "multiple" types, TinyWoTOperationType value can be
    * `OR`-ed (`|`) together. For example, to indicate that #func can accept
    * property read and property write operations:
    *
@@ -307,12 +304,19 @@ typedef struct {
 } TinyWoTHandler;
 
 /**
- * \brief A (Web) Thing.
+ * \brief A representation of a (Web) Thing.
  */
 typedef struct {
   /**
-   * \brief A list of handlers implementing the behavior (the Thing Description)
-   * of the Thing.
+   * \brief A list of handlers implementing the behaviors of the Thing.
+   *
+   * [WoT Thing Description](https://www.w3.org/TR/wot-thing-description11/)
+   * is a descriptor of this Thing.
+   *
+   * Note that at present TinyWoT does not automtically implement the
+   * [Well-Known URI](https://www.w3.org/TR/2021/WD-wot-discovery-20210602/
+   * #introduction-well-known), so to comply with the standard, an implementor
+   * will have to manually implement this handler.
    */
   const TinyWoTHandler *handlers;
   /**
