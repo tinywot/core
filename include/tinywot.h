@@ -252,7 +252,7 @@ typedef struct {
    * When #content is used instead, this must be set to NULL.
    *
    * \param[inout] buf Where the content should be placed.
-   * \param[in] buf_size The maximum size of #buf.
+   * \param[in] buf_size The maximum size of buf.
    * \param[in] from From which byte should this call read from.
    * \param[out] remaining The remaining content length (in bytes).
    * \return Bytes read.
