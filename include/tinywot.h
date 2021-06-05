@@ -294,9 +294,10 @@ typedef struct {
    * \brief The function to handle #ops at #path.
    *
    * \param[in] request The incoming request.
+   * \param[inout] ctx The user data passed in TinyWoTHandler::ctx.
    * \return A response to send back.
    */
-  TinyWoTResponse (*func)(const TinyWoTRequest *const request);
+  TinyWoTResponse (*func)(const TinyWoTRequest *const request, void *ctx);
   /**
    * \brief Arbitrary user data (context) to pass to the handler when invoked.
    */
