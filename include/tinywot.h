@@ -304,11 +304,22 @@ typedef struct {
 } TinyWoTHandler;
 
 /**
+ * \brief A convenient macro denoting the end of TinyWoTThing::handlers.
+ *
+ * This is basically an all-empty TinyWoTHandler.
+ */
+#define TINYWOT_HANDLER_END {NULL, 0, NULL, NULL}
+
+/**
  * \brief A representation of a (Web) Thing.
  */
 typedef struct {
   /**
    * \brief A list of handlers implementing the behaviors of the Thing.
+   *
+   * The list must end with an empty TinyWoTHandler (all its members should be
+   * NULL); otherwise, the behavior is undefined. #TINYWOT_HANDLER_END is a
+   * convenient macro for use in this case.
    *
    * [WoT Thing Description](https://www.w3.org/TR/wot-thing-description11/)
    * is a descriptor of this Thing.
@@ -319,10 +330,6 @@ typedef struct {
    * will have to manually implement this handler.
    */
   const TinyWoTHandler *handlers;
-  /**
-   * \brief The size of #handlers.
-   */
-  size_t handlers_size;
 } TinyWoTThing;
 
 /**

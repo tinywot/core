@@ -14,12 +14,14 @@ TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
                                         const TinyWoTRequest *const request) {
   TinyWoTResponse response = {0};
 
-  for (size_t i = 0; i < thing->handlers_size; i++) {
+  for (size_t i = 0;; i++) {
     const TinyWoTHandler *const handler = &(thing->handlers[i]);
 
-    if (config->strcmp(request->path, handler->path) != 0) {
+    if (!handler->path && !handler->ops && !handler->func && !handler->ctx)
+      break;
+
+    if (config->strcmp(request->path, handler->path) != 0)
       continue;
-    }
 
     if (!(request->op & handler->ops)) {
       response.status = TINYWOT_RESPONSE_STATUS_METHOD_NOT_ALLOWED;
