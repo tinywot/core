@@ -18,5 +18,14 @@
     }
   ],
   "license": "MIT",
-  "homepage": "https://www.yhi.moe/projects#tinywot"
+  "homepage": "https://www.yhi.moe/projects#tinywot",
+  "examples": [
+    {
+      "name": "Arduino LED",
+      "base": "examples/arduino-led",
+      "files": [
+        "main.ino"
+      ]
+    }
+  ]
 }
