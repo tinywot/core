@@ -66,10 +66,11 @@ static const char path_toggle[] PROGMEM = "/toggle";
  *   expects this, it's okay.
  */
 static const TinyWoTHandler handlers[] = {
-  {path_led, TINYWOT_OPERATION_TYPE_READ_PROPERTY | TINYWOT_OPERATION_TYPE_WRITE_PROPERTY, hLED, NULL},
+  {path_led,
+   TINYWOT_OPERATION_TYPE_READ_PROPERTY | TINYWOT_OPERATION_TYPE_WRITE_PROPERTY,
+   hLED, NULL},
   {path_toggle, TINYWOT_OPERATION_TYPE_INVOKE_ACTION, hLED, NULL},
-  TINYWOT_HANDLER_END
-};
+  TINYWOT_HANDLER_END};
 
 /**
  * \brief This Thing.
@@ -112,7 +113,8 @@ void setup() {
 
   /* Setting up the serial console */
   Serial.begin(9600);
-  while (!Serial) {}
+  while (!Serial) {
+  }
   Serial.setTimeout(30000);
 
   Serial.println(F(R"%(
@@ -136,7 +138,8 @@ In this example, the following resources are available:
  */
 void loop() {
   Serial.print(F("> "));
-  while (!Serial.available()) {}
+  while (!Serial.available()) {
+  }
 
   String in = Serial.readStringUntil('\n');
   int iPath = in.indexOf(' ');

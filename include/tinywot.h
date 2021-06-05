@@ -309,7 +309,8 @@ typedef struct {
  *
  * This is basically an all-empty TinyWoTHandler.
  */
-#define TINYWOT_HANDLER_END {NULL, 0, NULL, NULL}
+#define TINYWOT_HANDLER_END \
+  { NULL, 0, NULL, NULL }
 
 /**
  * \brief A representation of a (Web) Thing.
