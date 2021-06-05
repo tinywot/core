@@ -14,6 +14,15 @@ TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
                                         const TinyWoTRequest *const request) {
   TinyWoTResponse response = {0};
 
+  /* Sorry, but all / multiple read / write are not supported yet. */
+  if (request->op == TINYWOT_OPERATION_TYPE_READ_ALL_PROPERTIES ||
+      request->op == TINYWOT_OPERATION_TYPE_WRITE_ALL_PROPERTIES ||
+      request->op == TINYWOT_OPERATION_TYPE_READ_MULTIPLE_PROPERTIES ||
+      request->op == TINYWOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES) {
+    response.status = TINYWOT_RESPONSE_STATUS_NOT_IMPLEMENTED;
+    return response;
+  }
+
   for (size_t i = 0; i < thing->handlers_size; i++) {
     const TinyWoTHandler *const handler = &(thing->handlers[i]);
 
