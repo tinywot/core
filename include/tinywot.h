@@ -90,7 +90,7 @@ extern "C" {
  * \brief Identifies the writemultipleproperties operation on Things to update
  * the data of selected writable Properties in a single interaction.
  */
-#define TINYWOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES 0x2000
+#define TINYWOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES 0x1200
 
 /** @} */
 
