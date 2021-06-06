@@ -101,8 +101,7 @@ void setup() {
 
   /* Setting up the serial console */
   Serial.begin(9600);
-  while (!Serial) {
-  }
+  while (!Serial) {}
   Serial.setTimeout(30000);
 
   Serial.println(F(R"%(
@@ -123,8 +122,7 @@ In this example, the following resources are available:
 
 void loop() {
   Serial.print(F("> "));
-  while (!Serial.available()) {
-  }
+  while (!Serial.available()) {}
 
   String in = Serial.readStringUntil('\n');
   int iPath = in.indexOf(' ');
