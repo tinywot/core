@@ -1,6 +1,5 @@
-/**
- * \file arduino-led.cxx
- * \brief An example Web Thing exposing a LED based on TinyWoT and Arduino.
+/*
+ * An example Web Thing exposing a LED based on TinyWoT and Arduino.
  *
  * Since TinyWoT is not associated with any protocol yet, in this example a
  * simple text-based protocol is used. Each line is an instruction:
@@ -25,7 +24,6 @@
  * AC /toggle
  * ```
  *
- * \copyright
  * SPDX-FileCopyrightText: 2021 Junde Yhi <junde@yhi.moe>
  * SPDX-License-Identifier: MIT
  */
@@ -33,32 +31,28 @@
 #include <Arduino.h>
 #include <tinywot.h>
 
-/**
- * \brief The LED pin number that this Thing is operating.
+/*
+ * The LED pin number that this Thing is operating.
  */
 #define LED LED_BUILTIN
 
-/**
- * \brief LED handler.
- *
- * The implementation is at the bottom of the source file.
+/*
+ * LED handler, forward declaration. The implementation is at the bottom of the
+ * source file.
  */
 static TinyWoTResponse hLED(const TinyWoTRequest *const request, void *ctx);
 
-/**
- * \brief The path string to the LED property resource.
+/*
+ * The path strings to the resources that this Thing offers. To put the string
+ * into the (AVR) program space, declaration like this is required. Otherwise,
+ * this could be directly put into the handlers list (below).
  */
 static const char path_led[] PROGMEM = "/led";
-/**
- * \brief The path string to the LED property resource.
- */
 static const char path_toggle[] PROGMEM = "/toggle";
 
-/**
- * \brief Handlers used in this Thing.
- *
- * This list MUST end with #TINYWOT_HANDLER_END. Note that in this example, a
- * few special techniques are used:
+/*
+ * Handlers used in this Thing. This list MUST end with #TINYWOT_HANDLER_END.
+ * Note that in this example, a few special techniques are used:
  *
  * - `/led` can accept both read and write request since the two
  *   TinyWoTOperationType are OR-ed.
@@ -72,19 +66,16 @@ static const TinyWoTHandler handlers[] = {
   {path_toggle, TINYWOT_OPERATION_TYPE_INVOKE_ACTION, hLED, NULL},
   TINYWOT_HANDLER_END};
 
-/**
- * \brief This Thing.
- *
- * At this moment it only contains a list of handlers.
+/*
+ * This Thing. At this moment it only contains a list of handlers.
  */
 static const TinyWoTThing thing = {
   .handlers = handlers,
 };
 
-/**
- * \brief TinyWoT configuration object.
- *
- * At this moment it only contains a few function pointers.
+/*
+ * TinyWoT configuration object. At this moment it only contains a few function
+ * pointers.
  *
  * Note the use of a set of different function pointers -- these are special
  * avr-libc provided functions that work with program memory data. If an
@@ -104,9 +95,6 @@ static const TinyWoTConfig config = {
 #endif
 };
 
-/**
- * \brief Arduino setup function.
- */
 void setup() {
   /* Setting up the LED */
   pinMode(LED, OUTPUT);
@@ -133,9 +121,6 @@ In this example, the following resources are available:
 )%"));
 }
 
-/**
- * \brief Arduino main event loop.
- */
 void loop() {
   Serial.print(F("> "));
   while (!Serial.available()) {
@@ -243,8 +228,8 @@ void loop() {
   return;
 }
 
-/**
- * \brief Handler for LED related requests.
+/*
+ * Handler for LED related requests.
  */
 static TinyWoTResponse hLED(const TinyWoTRequest *const request, void *ctx) {
   (void)ctx;
@@ -301,6 +286,12 @@ static TinyWoTResponse hLED(const TinyWoTRequest *const request, void *ctx) {
       break;
 
     default:
+
+      /*
+       * This should not happen, since TinyWoT has prevented such thing from
+       * happening. The dead code is purely for completeness (to some extents).
+       */
+
       response.status = TINYWOT_RESPONSE_STATUS_METHOD_NOT_ALLOWED;
 
       break;
