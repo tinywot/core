@@ -4,6 +4,7 @@
 
 BasedOnStyle: LLVM
 AlignEscapedNewlines: DontAlign
+AllowShortBlocksOnASingleLine: Empty
 ConstructorInitializerIndentWidth: 2
 ContinuationIndentWidth: 2
 IndentCaseLabels: true
