@@ -1,6 +1,6 @@
 {
   "name": "tinywot",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.1",
   "description": "A simple, light-weight Web of Thing (WoT) runtime library for resource-constrained devices.",
   "keywords": [
     "webofthings"

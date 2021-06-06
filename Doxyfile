@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 PROJECT_NAME = "TinyWoT"
-PROJECT_NUMBER = "0.1.0"
+PROJECT_NUMBER = "0.1.0-alpha.1"
 PROJECT_BRIEF = "A simple, light-weight Web of Thing (WoT) runtime library for resource-constrained devices."
 OUTPUT_DIRECTORY = docs
 TAB_SIZE = 2
