@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 /**
- * \defgroup TinyWoTOperationType
+ * \defgroup TinyWoTOperationType TinyWoT Operation Types
  * \brief Well-known operation types for the Web of Things.
  *
  * These are fixed operation types specified in [Table 1, WoT Architecture 1.1]
@@ -341,6 +341,8 @@ typedef struct {
  * TinyWoT is platform-agnostic. However, there are situations where external
  * functions need to be used. To allow flexibility, they need to be supplied to
  * TinyWoT dynamically.
+ *
+ * An implementor must fill all the entries; TinyWoT doesn't check for NULL.
  */
 typedef struct {
   /**
