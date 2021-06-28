@@ -143,24 +143,8 @@ typedef struct {
   size_t content_length;
   /**
    * \brief The content (payload).
-   *
-   * When a #content_reader is used instead, this must be set to NULL.
    */
   void *content;
-  /**
-   * \brief A callback function for consuming the content lazily.
-   *
-   * When #content is used instead, this must be set to NULL.
-   *
-   * \param[inout] buf Where the content should be placed.
-   * \param[in] buf_size The maximum size of buf.
-   * \param[in] from From which byte should this call read from.
-   * \param[out] remaining The remaining content length (in bytes).
-   * \return Bytes read.
-   * \sa content
-   */
-  size_t (*content_reader)(void *buf, size_t buf_size, size_t from,
-                           size_t *remaining);
 } TinyWoTRequest;
 
 /**
@@ -240,26 +224,8 @@ typedef struct {
   size_t content_length;
   /**
    * \brief The content (payload).
-   *
-   * When a #content_reader is used instead, this must be set to NULL.
-   *
-   * \sa content_reader
    */
   void *content;
-  /**
-   * \brief A callback function for consuming #content lazily.
-   *
-   * When #content is used instead, this must be set to NULL.
-   *
-   * \param[inout] buf Where the content should be placed.
-   * \param[in] buf_size The maximum size of buf.
-   * \param[in] from From which byte should this call read from.
-   * \param[out] remaining The remaining content length (in bytes).
-   * \return Bytes read.
-   * \sa content
-   */
-  size_t (*content_reader)(void *buf, size_t buf_size, size_t from,
-                           size_t *remaining);
 } TinyWoTResponse;
 
 /**
