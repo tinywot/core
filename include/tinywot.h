@@ -17,12 +17,12 @@ extern "C" {
 #endif
 
 /**
- * \defgroup TinyWoTOperationType TinyWoT Operation Types
+ * \defgroup WoTOperationType WoT Operation Types
  * \brief Well-known operation types for the Web of Things.
  *
  * These are fixed operation types specified in [Table 1, WoT Architecture 1.1]
  * (https://www.w3.org/TR/wot-architecture11/#table-operation-types), except
- * TINYWOT_OPERATION_TYPE_UNKNOWN, which is used in TinyWoT to denote an
+ * WOT_OPERATION_TYPE_UNKNOWN, which is used in TinyWoT to denote an
  * uninitialized TinyWoTRequest.
  *
  * \sa TinyWoTRequest
@@ -33,64 +33,64 @@ extern "C" {
 /**
  * \brief Unknown operation type.
  *
- * This is usually used to denote an uninitialized TinyWoTRequest.
+ * This is used to denote an uninitialized TinyWoTRequest.
  */
-#define TINYWOT_OPERATION_TYPE_UNKNOWN (UINT32_C(0x0000))
+#define WOT_OPERATION_TYPE_UNKNOWN (UINT32_C(0x0000))
 /**
  * \brief Identifies the read operation on Property Affordances to retrieve
  * the corresponding data.
  */
-#define TINYWOT_OPERATION_TYPE_READ_PROPERTY (UINT32_C(0x0001))
+#define WOT_OPERATION_TYPE_READ_PROPERTY (UINT32_C(0x0001))
 /**
  * \brief Identifies the write operation on Property Affordances to update the
  * corresponding data.
  */
-#define TINYWOT_OPERATION_TYPE_WRITE_PROPERTY (UINT32_C(0x0002))
+#define WOT_OPERATION_TYPE_WRITE_PROPERTY (UINT32_C(0x0002))
 /**
  * \brief Identifies the observe operation on Property Affordances to be
  * notified with the new data when the Property was updated.
  */
-#define TINYWOT_OPERATION_TYPE_OBSERVE_PROPERTY (UINT32_C(0x0004))
+#define WOT_OPERATION_TYPE_OBSERVE_PROPERTY (UINT32_C(0x0004))
 /**
  * \brief Identifies the unobserve operation on Property Affordances to stop
  * the corresponding notifications.
  */
-#define TINYWOT_OPERATION_TYPE_UNOBSERVE_PROPERTY (UINT32_C(0x0008))
+#define WOT_OPERATION_TYPE_UNOBSERVE_PROPERTY (UINT32_C(0x0008))
 /**
  * \brief Identifies the invoke operation on Action Affordances to perform the
  * corresponding action.
  */
-#define TINYWOT_OPERATION_TYPE_INVOKE_ACTION (UINT32_C(0x0010))
+#define WOT_OPERATION_TYPE_INVOKE_ACTION (UINT32_C(0x0010))
 /**
  * \brief Identifies the subscribe operation on Event Affordances to be
  * notified by the Thing when the event occurs.
  */
-#define TINYWOT_OPERATION_TYPE_SUBSCRIBE_EVENT (UINT32_C(0x0020))
+#define WOT_OPERATION_TYPE_SUBSCRIBE_EVENT (UINT32_C(0x0020))
 /**
  * \brief Identifies the unsubscribe operation on Event Affordances to stop
  * the corresponding notifications.
  */
-#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBE_EVENT (UINT32_C(0x0040))
+#define WOT_OPERATION_TYPE_UNSUBSCRIBE_EVENT (UINT32_C(0x0040))
 /**
  * \brief Identifies the readallproperties operation on Things to retrieve the
  * data of all Properties in a single interaction.
  */
-#define TINYWOT_OPERATION_TYPE_READ_ALL_PROPERTIES (UINT32_C(0x0100))
+#define WOT_OPERATION_TYPE_READ_ALL_PROPERTIES (UINT32_C(0x0100))
 /**
  * \brief Identifies the writeallproperties operation on Things to update the
  * data of all writable Properties in a single interaction.
  */
-#define TINYWOT_OPERATION_TYPE_WRITE_ALL_PROPERTIES (UINT32_C(0x0200))
+#define WOT_OPERATION_TYPE_WRITE_ALL_PROPERTIES (UINT32_C(0x0200))
 /**
  * \brief Identifies the readmultipleproperties operation on Things to
  * retrieve the data of selected Properties in a single interaction.
  */
-#define TINYWOT_OPERATION_TYPE_READ_MULTIPLE_PROPERTIES (UINT32_C(0x1100))
+#define WOT_OPERATION_TYPE_READ_MULTIPLE_PROPERTIES (UINT32_C(0x1100))
 /**
  * \brief Identifies the writemultipleproperties operation on Things to update
  * the data of selected writable Properties in a single interaction.
  */
-#define TINYWOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES (UINT32_C(0x1200))
+#define WOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES (UINT32_C(0x1200))
 
 /** @} */
 
@@ -121,7 +121,7 @@ typedef enum {
 typedef struct {
   /**
    * \brief The type ("semantic intention") of the request.
-   * \sa TinyWoTOperationType
+   * \sa WoTOperationType
    */
   uint32_t op;
   /**
@@ -233,7 +233,7 @@ typedef struct {
  *
  * This is used in TinyWoTThing to describe what kinds of request it can accept.
  * An incoming TinyWoTRequest will be matched on #path and #ops. If #path
- * matches and #ops has the incoming TinyWoTOperationType bit set, then the
+ * matches and #ops has the incoming WoTOperationType bit set, then the
  * corresponding #func is invoked with the request and the #ctx provided.
  */
 typedef struct {
@@ -244,16 +244,16 @@ typedef struct {
   /**
    * \brief The operation types that #func can accept.
    *
-   * Except "all" and "multiple" types, TinyWoTOperationType value can be
+   * Except "all" and "multiple" types, WoTOperationType value can be
    * `OR`-ed (`|`) together. For example, to indicate that #func can accept
    * property read and property write operations:
    *
    * ```
-   * .ops = TINYWOT_OPERATION_TYPE_READ_PROPERTY |
-   * TINYWOT_OPERATION_TYPE_WRITE_PROPERTY
+   * .ops = WOT_OPERATION_TYPE_READ_PROPERTY |
+   * WOT_OPERATION_TYPE_WRITE_PROPERTY
    * ```
    *
-   * \sa TinyWoTOperationType
+   * \sa WoTOperationType
    */
   uint32_t ops;
   /**
