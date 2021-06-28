@@ -22,7 +22,7 @@
   "examples": [
     {
       "name": "Arduino LED",
-      "base": "examples/arduino-led",
+      "base": "example/arduino-led",
       "files": [
         "main.ino"
       ]
