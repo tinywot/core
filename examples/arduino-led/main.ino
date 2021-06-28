@@ -68,10 +68,9 @@ static TinyWoTHandler handlers[] = {
 /*
  * This Thing. At this moment it only contains a list of handlers.
  */
-static TinyWoTThing thing = {
-  .handlers = handlers,
-  .handlers_size = sizeof(handlers) / sizeof(TinyWoTHandler)
-};
+static TinyWoTThing thing = {.handlers = handlers,
+                             .handlers_size =
+                               sizeof(handlers) / sizeof(TinyWoTHandler)};
 
 /*
  * TinyWoT configuration object. At this moment it only contains a few function
