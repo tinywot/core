@@ -61,9 +61,9 @@ static const char path_toggle[] PROGMEM = "/toggle";
  */
 static TinyWoTHandler handlers[] = {
   {(char *)path_led,
-   TINYWOT_OPERATION_TYPE_READ_PROPERTY | TINYWOT_OPERATION_TYPE_WRITE_PROPERTY,
+   WOT_OPERATION_TYPE_READ_PROPERTY | WOT_OPERATION_TYPE_WRITE_PROPERTY,
    hLED, NULL},
-  {(char *)path_toggle, TINYWOT_OPERATION_TYPE_INVOKE_ACTION, hLED, NULL}};
+  {(char *)path_toggle, WOT_OPERATION_TYPE_INVOKE_ACTION, hLED, NULL}};
 
 /*
  * This Thing. At this moment it only contains a list of handlers.
@@ -142,14 +142,14 @@ void loop() {
   req.path = (char *)path.c_str();
 
   if (in.startsWith("PR")) {
-    req.op = TINYWOT_OPERATION_TYPE_READ_PROPERTY;
+    req.op = WOT_OPERATION_TYPE_READ_PROPERTY;
   } else if (in.startsWith("PW")) {
-    req.op = TINYWOT_OPERATION_TYPE_WRITE_PROPERTY;
+    req.op = WOT_OPERATION_TYPE_WRITE_PROPERTY;
     req.content_type = TINYWOT_CONTENT_TYPE_TEXT_PLAIN;
     req.content_length = opt.length();
     req.content = (void *)opt.c_str();
   } else if (in.startsWith("AC")) {
-    req.op = TINYWOT_OPERATION_TYPE_INVOKE_ACTION;
+    req.op = WOT_OPERATION_TYPE_INVOKE_ACTION;
   } else {
     Serial.println(F("Unsupported instruction!"));
     return;
@@ -234,7 +234,7 @@ static TinyWoTResponse hLED(TinyWoTRequest *request, void *ctx) {
   TinyWoTResponse response;
 
   switch (request->op) {
-    case TINYWOT_OPERATION_TYPE_READ_PROPERTY:
+    case WOT_OPERATION_TYPE_READ_PROPERTY:
       response.status = TINYWOT_RESPONSE_STATUS_OK;
       response.content_type = TINYWOT_CONTENT_TYPE_TEXT_PLAIN;
 
@@ -248,7 +248,7 @@ static TinyWoTResponse hLED(TinyWoTRequest *request, void *ctx) {
 
       break;
 
-    case TINYWOT_OPERATION_TYPE_WRITE_PROPERTY:
+    case WOT_OPERATION_TYPE_WRITE_PROPERTY:
       if (strcmp_P((const char *)request->content, str_true) == 0) {
         digitalWrite(LED, HIGH);
         response.status = TINYWOT_RESPONSE_STATUS_OK;
@@ -267,7 +267,7 @@ static TinyWoTResponse hLED(TinyWoTRequest *request, void *ctx) {
 
       break;
 
-    case TINYWOT_OPERATION_TYPE_INVOKE_ACTION:
+    case WOT_OPERATION_TYPE_INVOKE_ACTION:
       if (led) {
         digitalWrite(LED, LOW);
       } else {
