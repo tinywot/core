@@ -61,8 +61,8 @@ static const char path_toggle[] PROGMEM = "/toggle";
  */
 static TinyWoTHandler handlers[] = {
   {(char *)path_led,
-   WOT_OPERATION_TYPE_READ_PROPERTY | WOT_OPERATION_TYPE_WRITE_PROPERTY,
-   hLED, NULL},
+   WOT_OPERATION_TYPE_READ_PROPERTY | WOT_OPERATION_TYPE_WRITE_PROPERTY, hLED,
+   NULL},
   {(char *)path_toggle, WOT_OPERATION_TYPE_INVOKE_ACTION, hLED, NULL}};
 
 /*
