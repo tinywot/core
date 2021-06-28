@@ -40,7 +40,7 @@
  * LED handler, forward declaration. The implementation is at the bottom of the
  * source file.
  */
-static TinyWoTResponse hLED(const TinyWoTRequest *const request, void *ctx);
+static TinyWoTResponse hLED(TinyWoTRequest *request, void *ctx);
 
 /*
  * The path strings to the resources that this Thing offers. To put the string
@@ -59,18 +59,18 @@ static const char path_toggle[] PROGMEM = "/toggle";
  * - `/led` and `/toggle` both points to a same handler. As long as the handler
  *   expects this, it's okay.
  */
-static const TinyWoTHandler handlers[] = {
-  {path_led,
+static TinyWoTHandler handlers[] = {
+  {(char *)path_led,
    TINYWOT_OPERATION_TYPE_READ_PROPERTY | TINYWOT_OPERATION_TYPE_WRITE_PROPERTY,
    hLED, NULL},
-  {path_toggle, TINYWOT_OPERATION_TYPE_INVOKE_ACTION, hLED, NULL},
-  TINYWOT_HANDLER_END};
+  {(char *)path_toggle, TINYWOT_OPERATION_TYPE_INVOKE_ACTION, hLED, NULL}};
 
 /*
  * This Thing. At this moment it only contains a list of handlers.
  */
-static const TinyWoTThing thing = {
+static TinyWoTThing thing = {
   .handlers = handlers,
+  .handlers_size = sizeof(handlers) / sizeof(TinyWoTHandler)
 };
 
 /*
@@ -86,12 +86,8 @@ static const TinyWoTThing thing = {
 static const TinyWoTConfig config = {
 #ifdef __AVR_ARCH__
   .strcmp = strcmp_P,
-  .strlen = strlen_P,
-  .memcpy = memcpy_P,
 #else
   .strcmp = strcmp,
-  .strlen = strlen,
-  .memcpy = memcpy,
 #endif
 };
 
@@ -144,7 +140,7 @@ void loop() {
    */
 
   TinyWoTRequest req;
-  req.path = path.c_str();
+  req.path = (char *)path.c_str();
 
   if (in.startsWith("PR")) {
     req.op = TINYWOT_OPERATION_TYPE_READ_PROPERTY;
@@ -152,7 +148,7 @@ void loop() {
     req.op = TINYWOT_OPERATION_TYPE_WRITE_PROPERTY;
     req.content_type = TINYWOT_CONTENT_TYPE_TEXT_PLAIN;
     req.content_length = opt.length();
-    req.content = (const uint8_t *)opt.c_str();
+    req.content = (void *)opt.c_str();
   } else if (in.startsWith("AC")) {
     req.op = TINYWOT_OPERATION_TYPE_INVOKE_ACTION;
   } else {
@@ -166,7 +162,7 @@ void loop() {
    * pure (functionally) so it's stateless.
    */
 
-  TinyWoTResponse resp = tinywot_process_request(&config, &thing, &req);
+  TinyWoTResponse resp = tinywot_process(&config, &thing, &req);
 
   /*
    * The code below are for printing the TinyWoTResponse returned. In the
@@ -229,7 +225,7 @@ void loop() {
 /*
  * Handler for LED related requests.
  */
-static TinyWoTResponse hLED(const TinyWoTRequest *const request, void *ctx) {
+static TinyWoTResponse hLED(TinyWoTRequest *request, void *ctx) {
   (void)ctx;
 
   static const char str_true[] PROGMEM = "true";
