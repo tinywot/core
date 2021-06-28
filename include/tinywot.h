@@ -146,7 +146,7 @@ typedef struct {
    *
    * When a #content_reader is used instead, this must be set to NULL.
    */
-  uint8_t *content;
+  void *content;
   /**
    * \brief A callback function for consuming the content lazily.
    *
@@ -159,7 +159,7 @@ typedef struct {
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(uint8_t *buf, size_t buf_size, size_t from,
+  size_t (*content_reader)(void *buf, size_t buf_size, size_t from,
                            size_t *remaining);
 } TinyWoTRequest;
 
@@ -245,7 +245,7 @@ typedef struct {
    *
    * \sa content_reader
    */
-  uint8_t *content;
+  void *content;
   /**
    * \brief A callback function for consuming #content lazily.
    *
@@ -258,7 +258,7 @@ typedef struct {
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(uint8_t *buf, size_t buf_size, size_t from,
+  size_t (*content_reader)(void *buf, size_t buf_size, size_t from,
                            size_t *remaining);
 } TinyWoTResponse;
 
