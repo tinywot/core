@@ -327,9 +327,9 @@ typedef struct {
  * - the handler, when a handler can be found.
  * - this method, when no handler can be found.
  */
-TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
-                                        const TinyWoTThing *const thing,
-                                        const TinyWoTRequest *const request);
+TinyWoTResponse tinywot_process(const TinyWoTConfig *const config,
+                                const TinyWoTThing *const thing,
+                                const TinyWoTRequest *const request);
 
 #ifdef __cplusplus
 }

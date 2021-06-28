@@ -9,9 +9,9 @@
 
 #include "tinywot.h"
 
-TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
-                                        const TinyWoTThing *const thing,
-                                        const TinyWoTRequest *const request) {
+TinyWoTResponse tinywot_process(const TinyWoTConfig *const config,
+                                const TinyWoTThing *const thing,
+                                const TinyWoTRequest *const request) {
   TinyWoTResponse response = {0};
 
   for (size_t i = 0; i < thing->handlers_size; i++) {
