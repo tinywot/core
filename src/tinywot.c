@@ -33,7 +33,7 @@ TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
       break;
     }
 
-    response = handler->func(request, handler->ctx);
+    response = handler->func((TinyWoTRequest *)request, handler->ctx);
 
     break;
   }

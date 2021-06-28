@@ -132,7 +132,7 @@ typedef struct {
    * here only the path component is used. The other components (e.g. scheme,
    * authority) should be handled by the protocol binding implementations.
    */
-  const char *path;
+  char *path;
   /**
    * \brief The type of #content in a MIME string.
    */
@@ -146,7 +146,7 @@ typedef struct {
    *
    * When a #content_reader is used instead, this must be set to NULL.
    */
-  const uint8_t *content;
+  uint8_t *content;
   /**
    * \brief A callback function for consuming the content lazily.
    *
@@ -159,8 +159,8 @@ typedef struct {
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(uint8_t *const buf, const size_t buf_size,
-                           const size_t from, size_t *const remaining);
+  size_t (*content_reader)(uint8_t *buf, size_t buf_size, size_t from,
+                           size_t *remaining);
 } TinyWoTRequest;
 
 /**
@@ -245,7 +245,7 @@ typedef struct {
    *
    * \sa content_reader
    */
-  const uint8_t *content;
+  uint8_t *content;
   /**
    * \brief A callback function for consuming #content lazily.
    *
@@ -258,8 +258,8 @@ typedef struct {
    * \return Bytes read.
    * \sa content
    */
-  size_t (*content_reader)(uint8_t *const buf, const size_t buf_size,
-                           const size_t from, size_t *const remaining);
+  size_t (*content_reader)(uint8_t *buf, size_t buf_size, size_t from,
+                           size_t *remaining);
 } TinyWoTResponse;
 
 /**
@@ -274,7 +274,7 @@ typedef struct {
   /**
    * \brief The path to a resource that #func can handle.
    */
-  const char *path;
+  char *path;
   /**
    * \brief The operation types that #func can accept.
    *
@@ -289,7 +289,7 @@ typedef struct {
    *
    * \sa TinyWoTOperationType
    */
-  const uint32_t ops;
+  uint32_t ops;
   /**
    * \brief The function to handle #ops at #path.
    *
@@ -297,7 +297,7 @@ typedef struct {
    * \param[inout] ctx The user data passed in TinyWoTHandler::ctx.
    * \return A response to send back.
    */
-  TinyWoTResponse (*func)(const TinyWoTRequest *const request, void *ctx);
+  TinyWoTResponse (*func)(TinyWoTRequest *request, void *ctx);
   /**
    * \brief Arbitrary user data (context) to pass to the handler when invoked.
    */
@@ -331,7 +331,7 @@ typedef struct {
    * #introduction-well-known), so to comply with the standard, an implementor
    * will have to manually implement this handler.
    */
-  const TinyWoTHandler *handlers;
+  TinyWoTHandler *handlers;
 } TinyWoTThing;
 
 /**
