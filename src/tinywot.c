@@ -14,11 +14,11 @@ TinyWoTResponse tinywot_process_request(const TinyWoTConfig *const config,
                                         const TinyWoTRequest *const request) {
   TinyWoTResponse response = {0};
 
-  for (size_t i = 0;; i++) {
+  for (size_t i = 0; i < thing->handlers_size; i++) {
     const TinyWoTHandler *const handler = &(thing->handlers[i]);
 
-    if (!handler->path && !handler->ops && !handler->func && !handler->ctx)
-      break;
+    if (!handler->path)
+      continue;
 
     if (config->strcmp(request->path, handler->path) != 0)
       continue;
