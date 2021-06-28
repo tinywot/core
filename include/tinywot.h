@@ -35,62 +35,62 @@ extern "C" {
  *
  * This is usually used to denote an uninitialized TinyWoTRequest.
  */
-#define TINYWOT_OPERATION_TYPE_UNKNOWN 0x0000
+#define TINYWOT_OPERATION_TYPE_UNKNOWN (UINT32_C(0x0000))
 /**
  * \brief Identifies the read operation on Property Affordances to retrieve
  * the corresponding data.
  */
-#define TINYWOT_OPERATION_TYPE_READ_PROPERTY 0x0001
+#define TINYWOT_OPERATION_TYPE_READ_PROPERTY (UINT32_C(0x0001))
 /**
  * \brief Identifies the write operation on Property Affordances to update the
  * corresponding data.
  */
-#define TINYWOT_OPERATION_TYPE_WRITE_PROPERTY 0x0002
+#define TINYWOT_OPERATION_TYPE_WRITE_PROPERTY (UINT32_C(0x0002))
 /**
  * \brief Identifies the observe operation on Property Affordances to be
  * notified with the new data when the Property was updated.
  */
-#define TINYWOT_OPERATION_TYPE_OBSERVE_PROPERTY 0x0004
+#define TINYWOT_OPERATION_TYPE_OBSERVE_PROPERTY (UINT32_C(0x0004))
 /**
  * \brief Identifies the unobserve operation on Property Affordances to stop
  * the corresponding notifications.
  */
-#define TINYWOT_OPERATION_TYPE_UNOBSERVE_PROPERTY 0x0008
+#define TINYWOT_OPERATION_TYPE_UNOBSERVE_PROPERTY (UINT32_C(0x0008))
 /**
  * \brief Identifies the invoke operation on Action Affordances to perform the
  * corresponding action.
  */
-#define TINYWOT_OPERATION_TYPE_INVOKE_ACTION 0x0010
+#define TINYWOT_OPERATION_TYPE_INVOKE_ACTION (UINT32_C(0x0010))
 /**
  * \brief Identifies the subscribe operation on Event Affordances to be
  * notified by the Thing when the event occurs.
  */
-#define TINYWOT_OPERATION_TYPE_SUBSCRIBE_EVENT 0x0020
+#define TINYWOT_OPERATION_TYPE_SUBSCRIBE_EVENT (UINT32_C(0x0020))
 /**
  * \brief Identifies the unsubscribe operation on Event Affordances to stop
  * the corresponding notifications.
  */
-#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBE_EVENT 0x0040
+#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBE_EVENT (UINT32_C(0x0040))
 /**
  * \brief Identifies the readallproperties operation on Things to retrieve the
  * data of all Properties in a single interaction.
  */
-#define TINYWOT_OPERATION_TYPE_READ_ALL_PROPERTIES 0x0100
+#define TINYWOT_OPERATION_TYPE_READ_ALL_PROPERTIES (UINT32_C(0x0100))
 /**
  * \brief Identifies the writeallproperties operation on Things to update the
  * data of all writable Properties in a single interaction.
  */
-#define TINYWOT_OPERATION_TYPE_WRITE_ALL_PROPERTIES 0x0200
+#define TINYWOT_OPERATION_TYPE_WRITE_ALL_PROPERTIES (UINT32_C(0x0200))
 /**
  * \brief Identifies the readmultipleproperties operation on Things to
  * retrieve the data of selected Properties in a single interaction.
  */
-#define TINYWOT_OPERATION_TYPE_READ_MULTIPLE_PROPERTIES 0x1100
+#define TINYWOT_OPERATION_TYPE_READ_MULTIPLE_PROPERTIES (UINT32_C(0x1100))
 /**
  * \brief Identifies the writemultipleproperties operation on Things to update
  * the data of selected writable Properties in a single interaction.
  */
-#define TINYWOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES 0x1200
+#define TINYWOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES (UINT32_C(0x1200))
 
 /** @} */
 
