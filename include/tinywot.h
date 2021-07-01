@@ -97,15 +97,17 @@ extern "C" {
 /**
  * \brief Content types / formats that TinyWoT expects.
  *
- * These values are picked from the [CoAP Content-Formats Registry](https://
- * datatracker.ietf.org/doc/html/rfc7252#section-12.3). IoT devices more or
- * less want to use one of them. The additional one,
- * TINYWOT_CONTENT_TYPE_TD_JSON, is proposed in WoT Thing Description [here](
- * https://www.w3.org/TR/wot-thing-description11/#content-format-section) and
- * have registered in the [IANA registry](https://www.iana.org/assignments/
- * core-parameters/core-parameters.xhtml#content-formats).
+ * These values, except TINYWOT_CONTENT_TYPE_UNKNOWN, are picked from the
+ * [CoAP Content-Formats Registry](https://datatracker.ietf.org/doc/html/rfc7252
+ * #section-12.3). IoT devices more or less want to use one of them. The
+ * additional one, TINYWOT_CONTENT_TYPE_TD_JSON, is proposed in WoT Thing
+ * Description [here](https://www.w3.org/TR/wot-thing-description11/
+ * #content-format-section) and have registered in the [IANA registry](https://
+ * www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-
+ * formats).
  */
 typedef enum {
+  TINYWOT_CONTENT_TYPE_UNKNOWN = -1,
   TINYWOT_CONTENT_TYPE_TEXT_PLAIN = 0,
   TINYWOT_CONTENT_TYPE_OCTET_STREAM = 42,
   TINYWOT_CONTENT_TYPE_JSON = 50,
