@@ -1,0 +1,6 @@
+# pip requirements for the use of this project
+# SPDX-FileCopyrightText: 2021 Junde Yhi <junde@yhi.moe>
+# SPDX-License-Identifier: MIT
+
+platformio==5.1.1
+reuse==0.13.0
