@@ -242,7 +242,7 @@ typedef struct {
   /**
    * \brief The path to a resource that #func can handle.
    */
-  char *path;
+  const char *path;
   /**
    * \brief The operation types that #func can accept.
    *
