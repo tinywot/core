@@ -295,42 +295,15 @@ typedef struct {
 } TinyWoTThing;
 
 /**
- * \brief A configuration object consisting of several platform-specific
- * interfaces.
- *
- * TinyWoT is platform-agnostic. However, there are situations where external
- * functions need to be used. To allow flexibility, they need to be supplied to
- * TinyWoT dynamically.
- *
- * An implementor must fill all the entries; TinyWoT doesn't check for NULL.
- */
-typedef struct {
-  /**
-   * \brief String comparison function.
-   *
-   * The signature is identical to the `strcmp` in standard C library. The
-   * reason you need to supply this to TinyWoT is that you may want to utilize
-   * the program space on some platforms (e.g. AVR8) to store strings to save
-   * the precious RAM space. In this case, a special `strcmp` needs to be used.
-   * `lhs` will be in the RAM and `rhs` will be in the program space. If there
-   * is no need of using program-space-specific `strcmp`, just supply a standard
-   * `strcmp` here.
-   */
-  int (*strcmp)(const char *lhs, const char *rhs);
-} TinyWoTConfig;
-
-/**
  * \brief Process a `request` to `thing` using `config`.
  *
- * \param[in] config  Configuration for TinyWoT to work.
  * \param[in] thing   The Thing to expose.
  * \param[in] request The request received from protocol binding libraries.
  * \return A response returned by either:
  * - the handler, when a handler can be found.
  * - this method, when no handler can be found.
  */
-TinyWoTResponse tinywot_process(const TinyWoTConfig *const config,
-                                const TinyWoTThing *const thing,
+TinyWoTResponse tinywot_process(const TinyWoTThing *const thing,
                                 const TinyWoTRequest *const request);
 
 #ifdef __cplusplus

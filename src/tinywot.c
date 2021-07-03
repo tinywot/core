@@ -9,8 +9,21 @@
 
 #include "tinywot.h"
 
-TinyWoTResponse tinywot_process(const TinyWoTConfig *const config,
-                                const TinyWoTThing *const thing,
+/**
+ * \internal \brief The `strcmp` to use.
+ *
+ * On AVR platforms where program space strings are available, utilizing this
+ * can save a lot of room in RAM occupied by strings.
+ */
+#if defined(__AVR_ARCH__) && defined(TINYWOT_USE_PROGMEM)
+#include <avr/pgmspace.h>
+#define _tinywot_strcmp strcmp_P
+#else
+#include <string.h>
+#define _tinywot_strcmp strcmp
+#endif
+
+TinyWoTResponse tinywot_process(const TinyWoTThing *const thing,
                                 const TinyWoTRequest *const request) {
   TinyWoTResponse response = {0};
 
@@ -20,7 +33,7 @@ TinyWoTResponse tinywot_process(const TinyWoTConfig *const config,
     if (!handler->path)
       continue;
 
-    if (config->strcmp(request->path, handler->path) != 0)
+    if (_tinywot_strcmp(request->path, handler->path) != 0)
       continue;
 
     if (!(request->op & handler->ops)) {

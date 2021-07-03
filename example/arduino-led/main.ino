@@ -72,24 +72,6 @@ static TinyWoTThing thing = {.handlers = handlers,
                              .handlers_size =
                                sizeof(handlers) / sizeof(TinyWoTHandler)};
 
-/*
- * TinyWoT configuration object. At this moment it only contains a few function
- * pointers.
- *
- * Note the use of a set of different function pointers -- these are special
- * avr-libc provided functions that work with program memory data. If an
- * implementor makes use of such feature, they must use this set of different
- * functions, otherwise the program will crash, since the RAM and the program
- * space don't use a same address space.
- */
-static const TinyWoTConfig config = {
-#ifdef __AVR_ARCH__
-  .strcmp = strcmp_P,
-#else
-  .strcmp = strcmp,
-#endif
-};
-
 void setup() {
   /* Setting up the LED */
   pinMode(LED, OUTPUT);
@@ -161,7 +143,7 @@ void loop() {
    * pure (functionally) so it's stateless.
    */
 
-  TinyWoTResponse resp = tinywot_process(&config, &thing, &req);
+  TinyWoTResponse resp = tinywot_process(&thing, &req);
 
   /*
    * The code below are for printing the TinyWoTResponse returned. In the
