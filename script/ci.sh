@@ -11,3 +11,9 @@ platformio ci \
   --lib . \
   --board uno \
   example/arduino-led/main.ino
+
+platformio ci \
+  --lib . \
+  --board uno \
+  --project-option 'build_flags=-D TINYWOT_USE_PROGMEM' \
+  example/arduino-led/main.ino
