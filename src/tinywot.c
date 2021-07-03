@@ -17,10 +17,10 @@
  */
 #if defined(__AVR_ARCH__) && defined(TINYWOT_USE_PROGMEM)
 #include <avr/pgmspace.h>
-#define _tinywot_strcmp strcmp_P
+#define _strcmp strcmp_P
 #else
 #include <string.h>
-#define _tinywot_strcmp strcmp
+#define _strcmp strcmp
 #endif
 
 TinyWoTResponse tinywot_process(const TinyWoTThing *const thing,
@@ -33,7 +33,7 @@ TinyWoTResponse tinywot_process(const TinyWoTThing *const thing,
     if (!handler->path)
       continue;
 
-    if (_tinywot_strcmp(request->path, handler->path) != 0)
+    if (_strcmp(request->path, handler->path) != 0)
       continue;
 
     if (!(request->op & handler->ops)) {
