@@ -91,6 +91,14 @@ extern "C" {
  * the data of selected writable Properties in a single interaction.
  */
 #define WOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES (UINT32_C(0x1200))
+/**
+ * \brief Special operation type that is used to indicate an incoming HTTP
+ * OPTIONS request.
+ *
+ * In this case, the handler will not be called and relevant metadata will be
+ * returned directly.
+ */
+#define TINYWOT_OPERATION_TYPE_OPTIONS (UINT32_C(0x8000))
 
 /** @} */
 
@@ -216,6 +224,13 @@ typedef struct {
    * \brief The status of the request.
    */
   TinyWoTResponseStatus status;
+  /**
+   * \brief The allowed affordances on the handler.
+   *
+   * This is a copy of `TinyWoTHandler::ops`. Useful for some responses that
+   * need this information, e.g. HTTP 405 Method Not Allowed.
+   */
+  int allow;
   /**
    * \brief The type of #content.
    */
