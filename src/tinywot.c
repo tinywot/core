@@ -36,15 +36,15 @@ TinyWoTResponse tinywot_process(const TinyWoTThing *const thing,
     if (_strcmp(request->path, handler->path) != 0)
       continue;
 
+    response.allow = handler->ops;
+
     if (request->op == TINYWOT_OPERATION_TYPE_OPTIONS) {
       response.status = TINYWOT_RESPONSE_STATUS_OK;
-      response.allow = handler->ops;
       break;
     }
 
     if (!(request->op & handler->ops)) {
       response.status = TINYWOT_RESPONSE_STATUS_METHOD_NOT_ALLOWED;
-      response.allow = handler->ops;
       break;
     }
 
