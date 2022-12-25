@@ -1,7 +1,7 @@
 {
   "name": "tinywot",
-  "version": "0.2.0",
-  "description": "A simple, light-weight Web of Thing (WoT) runtime library for resource-constrained devices.",
+  "version": "0.3.0-dev",
+  "description": "A library for implementing Web of Thing (WoT) servients on resource-constrained devices",
   "keywords": [
     "webofthings"
   ],
@@ -18,14 +18,5 @@
     }
   ],
   "license": "MIT",
-  "homepage": "https://www.yhi.moe/projects#tinywot",
-  "examples": [
-    {
-      "name": "Arduino LED",
-      "base": "example/arduino-led",
-      "files": [
-        "main.ino"
-      ]
-    }
-  ]
+  "homepage": "https://www.yhi.moe/projects#tinywot"
 }

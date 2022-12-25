@@ -1,326 +1,291 @@
-/**
- * \file tinywot.h
- * \brief TinyWoT public APIs.
- *
- * \copyright
- * SPDX-FileCopyrightText: 2021 Junde Yhi <junde@yhi.moe>
- * SPDX-License-Identifier: MIT
- */
+/*
+  SPDX-FileCopyrightText: 2021-2022 Junde Yhi <junde@yhi.moe>
+  SPDX-License-Identifier: MIT
+*/
 
-#pragma once
+/*!
+  \file
+*/
+
+#ifndef TINYWOT_H
+#define TINYWOT_H
 
 #include <stddef.h>
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/**
- * \defgroup WoTOperationType WoT Operation Types
- * \brief Well-known operation types for the Web of Things.
- *
- * These are fixed operation types specified in [Table 1, WoT Architecture 1.1]
- * (https://www.w3.org/TR/wot-architecture11/#table-operation-types), except
- * WOT_OPERATION_TYPE_UNKNOWN, which is used in TinyWoT to denote an
- * uninitialized TinyWoTRequest.
- *
- * \sa TinyWoTRequest
- *
- * @{
- */
+/*!
+  \defgroup tinywot_status TinyWoT Status Codes
 
-/**
- * \brief Unknown operation type.
- *
- * This is used to denote an uninitialized TinyWoTRequest.
- */
-#define WOT_OPERATION_TYPE_UNKNOWN (UINT32_C(0x0000))
-/**
- * \brief Identifies the read operation on Property Affordances to retrieve
- * the corresponding data.
- */
-#define WOT_OPERATION_TYPE_READ_PROPERTY (UINT32_C(0x0001))
-/**
- * \brief Identifies the write operation on Property Affordances to update the
- * corresponding data.
- */
-#define WOT_OPERATION_TYPE_WRITE_PROPERTY (UINT32_C(0x0002))
-/**
- * \brief Identifies the observe operation on Property Affordances to be
- * notified with the new data when the Property was updated.
- */
-#define WOT_OPERATION_TYPE_OBSERVE_PROPERTY (UINT32_C(0x0004))
-/**
- * \brief Identifies the unobserve operation on Property Affordances to stop
- * the corresponding notifications.
- */
-#define WOT_OPERATION_TYPE_UNOBSERVE_PROPERTY (UINT32_C(0x0008))
-/**
- * \brief Identifies the invoke operation on Action Affordances to perform the
- * corresponding action.
- */
-#define WOT_OPERATION_TYPE_INVOKE_ACTION (UINT32_C(0x0010))
-/**
- * \brief Identifies the subscribe operation on Event Affordances to be
- * notified by the Thing when the event occurs.
- */
-#define WOT_OPERATION_TYPE_SUBSCRIBE_EVENT (UINT32_C(0x0020))
-/**
- * \brief Identifies the unsubscribe operation on Event Affordances to stop
- * the corresponding notifications.
- */
-#define WOT_OPERATION_TYPE_UNSUBSCRIBE_EVENT (UINT32_C(0x0040))
-/**
- * \brief Identifies the readallproperties operation on Things to retrieve the
- * data of all Properties in a single interaction.
- */
-#define WOT_OPERATION_TYPE_READ_ALL_PROPERTIES (UINT32_C(0x0100))
-/**
- * \brief Identifies the writeallproperties operation on Things to update the
- * data of all writable Properties in a single interaction.
- */
-#define WOT_OPERATION_TYPE_WRITE_ALL_PROPERTIES (UINT32_C(0x0200))
-/**
- * \brief Identifies the readmultipleproperties operation on Things to
- * retrieve the data of selected Properties in a single interaction.
- */
-#define WOT_OPERATION_TYPE_READ_MULTIPLE_PROPERTIES (UINT32_C(0x1100))
-/**
- * \brief Identifies the writemultipleproperties operation on Things to update
- * the data of selected writable Properties in a single interaction.
- */
-#define WOT_OPERATION_TYPE_WRITE_MULTIPLE_PROPERTIES (UINT32_C(0x1200))
-/**
- * \brief Special operation type that is used to indicate an incoming HTTP
- * OPTIONS request.
- *
- * In this case, the handler will not be called and relevant metadata will be
- * returned directly.
- */
-#define TINYWOT_OPERATION_TYPE_OPTIONS (UINT32_C(0x8000))
+  These macros define possible status codes used across the library, and
+  returned by library functions. Thing implementations should also use them to
+  indicate their status.
 
-/** @} */
+  Status codes are signed integer (`int`) values. Positive ones are various
+  run-time exceptions. Negative ones are critical -- usually programmaic --
+  errors. For example, `::TINYWOT_NULL_POINTER_ERROR` indicates that one or more
+  argument that should be valid pointers turn out to be `NULL` pointers at
+  run-time, which indicates a bug.
 
-/**
- * \brief Content types / formats that TinyWoT expects.
- *
- * These values, except TINYWOT_CONTENT_TYPE_UNKNOWN, are picked from the
- * [CoAP Content-Formats Registry](https://datatracker.ietf.org/doc/html/rfc7252
- * #section-12.3). IoT devices more or less want to use one of them. The
- * additional one, TINYWOT_CONTENT_TYPE_TD_JSON, is proposed in WoT Thing
- * Description [here](https://www.w3.org/TR/wot-thing-description11/
- * #content-format-section) and have registered in the [IANA registry](https://
- * www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-
- * formats).
- */
-typedef enum {
-  TINYWOT_CONTENT_TYPE_UNKNOWN = -1,
-  TINYWOT_CONTENT_TYPE_TEXT_PLAIN = 0,
-  TINYWOT_CONTENT_TYPE_OCTET_STREAM = 42,
-  TINYWOT_CONTENT_TYPE_JSON = 50,
-  TINYWOT_CONTENT_TYPE_TD_JSON = 432,
-} TinyWoTContentType;
+  TinyWoT functions have their possible return values documented. TinyWoT also
+  expects and check all these status codes returned by the thing implementation
+  functions. The exact behaviors are discussed in the documentation of every
+  library function.
 
-/**
- * \brief A received request.
- *
- * This can be compared to the [`Form`](https://www.w3.org/TR/wot-thing-
- * description11/#form) type in WoT Thing Description.
- */
-typedef struct {
-  /**
-   * \brief The type ("semantic intention") of the request.
-   * \sa WoTOperationType
-   */
-  uint32_t op;
-  /**
-   * \brief The path to the resource that the request is querying.
-   *
-   * Unlike the [`Form`](https://www.w3.org/TR/wot-thing-description11/#form)
-   * type in WoT Thing Description, where a `href` of type `anyURI` is used,
-   * here only the path component is used. The other components (e.g. scheme,
-   * authority) should be handled by the protocol binding implementations.
-   */
-  char *path;
-  /**
-   * \brief The type of #content in a MIME string.
-   */
-  TinyWoTContentType content_type;
-  /**
-   * \brief The size (in bytes) of #content.
-   */
-  size_t content_length;
-  /**
-   * \brief The content (payload).
-   */
-  void *content;
-} TinyWoTRequest;
+  @{
+*/
 
-/**
- * \brief Status of operations returned by handlers.
- *
- * \sa TinyWoTResponse
- */
-typedef enum {
-  /**
-   * \brief Unknown status.
-   *
-   * This is used to indicate an uninitialized TinyWoTResponse.
-   */
-  TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
-  /**
-   * \brief The handler has successfully processed a request.
-   *
-   * This can be compared to a `HTTP 200 OK`.
-   */
-  TINYWOT_RESPONSE_STATUS_OK,
-  /**
-   * \brief The handler thinks the request is malformed.
-   *
-   * This can be compared to a `HTTP 400 Bad Request`.
-   */
-  TINYWOT_RESPONSE_STATUS_BAD_REQUEST,
-  /**
-   * \brief The handler doesn't know how to process a request.
-   *
-   * This can be compared to a `HTTP 404 Not Found`. This will also be returned
-   * by TinyWoT when no handler can be found.
-   */
-  TINYWOT_RESPONSE_STATUS_UNSUPPORTED,
-  /**
-   * \brief The handler cannot accept the incoming method.
-   *
-   * This can be compared to a `HTTP 405 Method Not Allowed`. Note that handler
-   * implementors do not usually return this; instead, since TinyWoTHandler::ops
-   * have already declared the acceptable interaction affordances of the
-   * corresponding handler, TinyWoT will directly return this instead of
-   * invoking the handler function.
-   */
-  TINYWOT_RESPONSE_STATUS_METHOD_NOT_ALLOWED,
-  /**
-   * \brief The handler has failed to process a request.
-   *
-   * This can be compared to a `HTTP 500 Internal Server Error`.
-   */
-  TINYWOT_RESPONSE_STATUS_ERROR,
-  /**
-   * \brief No handler is implemented for the request at the matched path.
-   *
-   * This can be compared to a `HTTP 501 Not Implemented`. If there is an entry
-   * in TinyWoTThing::handlers matches the incoming request, but with its
-   * TinyWoTHandler::func being NULL, then this will be returned by TinyWoT too.
-   */
-  TINYWOT_RESPONSE_STATUS_NOT_IMPLEMENTED,
-} TinyWoTResponseStatus;
+/*!
+  \brief Null pointer error.
 
-/**
- * \brief A response to a request.
- *
- * \sa TinyWoTRequest
- */
-typedef struct {
-  /**
-   * \brief The status of the request.
-   */
-  TinyWoTResponseStatus status;
-  /**
-   * \brief The allowed affordances on the handler.
-   *
-   * This is a copy of `TinyWoTHandler::ops`. Useful for some responses that
-   * need this information, e.g. HTTP 405 Method Not Allowed.
-   */
-  int allow;
-  /**
-   * \brief The type of #content.
-   */
-  TinyWoTContentType content_type;
-  /**
-   * \brief The length of #content.
-   */
-  size_t content_length;
-  /**
-   * \brief The content (payload).
-   */
-  void *content;
-} TinyWoTResponse;
+  TinyWoT checks for NULL pointers for all public interfaces (functions). Any
+  non-nullable parameter that is found to be a `NULL` in run-time will trigger
+  an immediate return with this status code. Consult the documentation for
+  interfaces / functions for which parameters are non-nullable.
+*/
+#define TINYWOT_NULL_POINTER_ERROR (-1)
 
-/**
- * \brief A tuple identifying a handler to an incoming request.
- *
- * This is used in TinyWoTThing to describe what kinds of request it can accept.
- * An incoming TinyWoTRequest will be matched on #path and #ops. If #path
- * matches and #ops has the incoming WoTOperationType bit set, then the
- * corresponding #func is invoked with the request and the #ctx provided.
- */
-typedef struct {
-  /**
-   * \brief The path to a resource that #func can handle.
-   */
-  const char *path;
-  /**
-   * \brief The operation types that #func can accept.
-   *
-   * Except "all" and "multiple" types, WoTOperationType value can be
-   * `OR`-ed (`|`) together. For example, to indicate that #func can accept
-   * property read and property write operations:
-   *
-   * ```
-   * .ops = WOT_OPERATION_TYPE_READ_PROPERTY |
-   * WOT_OPERATION_TYPE_WRITE_PROPERTY
-   * ```
-   *
-   * \sa WoTOperationType
-   */
-  uint32_t ops;
-  /**
-   * \brief The function to handle #ops at #path.
-   *
-   * \param[in] request The incoming request.
-   * \param[inout] ctx The user data passed in TinyWoTHandler::ctx.
-   * \return A response to send back.
-   */
-  TinyWoTResponse (*func)(TinyWoTRequest *request, void *ctx);
-  /**
-   * \brief Arbitrary user data (context) to pass to the handler when invoked.
-   */
-  void *ctx;
-} TinyWoTHandler;
+/*!
+  \brief General error.
 
-/**
- * \brief A representation of a (Web) Thing.
- */
-typedef struct {
-  /**
-   * \brief A list of handlers implementing the behaviors of the Thing.
-   *
-   * [WoT Thing Description](https://www.w3.org/TR/wot-thing-description11/)
-   * is a descriptor of this Thing.
-   *
-   * Note that at present TinyWoT does not automtically implement the
-   * [Well-Known URI](https://www.w3.org/TR/2021/WD-wot-discovery-20210602/
-   * #introduction-well-known), so to comply with the standard, an implementor
-   * will have to manually implement this handler.
-   */
-  TinyWoTHandler *handlers;
-  /**
-   * \brief The size of #handlers, in the number of handlers.
-   */
+  This is used to indicate an error without specifying a reason.
+*/
+#define TINYWOT_GENERAL_ERROR 0
+
+/*!
+  \brief Success.
+
+  This is not an error.
+*/
+#define TINYWOT_SUCCESS 1
+
+/*!
+  \brief Something is missing.
+
+  For example, if a given WoT affordance name does not exist in a thing, then
+  this code will be returned.
+*/
+#define TINYWOT_NOT_FOUND 2
+
+/*!
+  \brief A function is not implemented.
+
+  For example, if a given WoT affordance name is associated without a valid
+  handler function (set to `NULL`), then this code will be returned.
+*/
+#define TINYWOT_NOT_IMPLEMENTED 3
+
+/*!
+  \brief A requested operation is not allowed.
+
+  For example, if a given WoT affordance name exists, but cannot accept the
+  given operation type, then this code will be returned.
+*/
+#define TINYWOT_NOT_ALLOWED 4
+
+/*! @} */
+
+/*!
+  \brief A value specifying an unknown content type / format.
+
+  This is used in e.g. `tinywot_scratchpad::type_hint` to indicate an
+  uninitialized or erroneous type of data. TinyWoT treats this value as an
+  exception (error) and will not send it out or accept it as an input. It is a
+  magic value chosen to be within the "Reserved for Experimental Use" allocation
+  in the [IANA CoAP Content-Formats
+  registry](https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats),
+  in the hope that it is not usually used by other developers.
+
+  \note In fact, according to
+  [RFC7252](https://www.rfc-editor.org/rfc/rfc7252.html), CoAP Content-Format
+  "... identifiers between 65000 and 65535 inclusive are reserved for
+  experiments. They are not meant for vendor-specific use of any kind and MUST
+  NOT be used in operational deployments." TinyWoT at its core is not a CoAP
+  producer nor consumer, so **only** this specific value is treated as an error
+  by TinyWoT; others will be processed normally.
+*/
+#define TINYWOT_TYPE_UNKNOWN 65535u
+
+/*!
+  \brief A segment of memory with metadata.
+
+  This data structure is used across the library to reduce the clutter of
+  passing multiple if not all of them as function parameters.
+*/
+struct tinywot_scratchpad {
+  /*!
+    \brief The full size of memory pointed by `::data`.
+
+    The unit of this field is undefined. Depending on `::type_hint` the
+    application is free to choose a suitable unit, but byte is recommended.
+  */
+  size_t size;
+
+  /*!
+    \brief The actual meaningful size of content pointed by `::data`.
+
+    For example, if `::data` points to a non-NUL-terminated string `"hello"`,
+    then this should be 5.
+
+    The unit of this field is undefined. Depending on `::type_hint` the
+    application is free to choose a suitable unit, but byte is recommended.
+  */
+  size_t valid_size;
+
+  /*!
+    \brief An arbitrary unsigned integer hinting the type of data pointed by
+    `data`.
+
+    The meaning of this field is undefined; different parties producing and
+    consuming this structure may have different definitions on the meaningful
+    values of this field. You are recommended to use [CoAP
+    Content-Formats](https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats),
+    although you may use any unsigned integer here -- hence the name "hint", as
+    this is only an informative field.
+  */
+  unsigned int type_hint;
+
+  /*!
+    \brief A pointer to a segment of memory described by the other fields in
+    this structure.
+    \note This pointer is nullable, provided that ::size or ::valid_size is
+    `0`.
+  */
+  void *data;
+};
+
+void tinywot_scratchpad_forget(struct tinywot_scratchpad *self);
+void tinywot_scratchpad_free(struct tinywot_scratchpad *self);
+
+enum tinywot_operation_type {
+  TINYWOT_OPERATION_TYPE_UNKNOWN = 0,
+  TINYWOT_OPERATION_TYPE_PROPERTY_READ,
+  TINYWOT_OPERATION_TYPE_PROPERTY_WRITE,
+  TINYWOT_OPERATION_TYPE_INVOKE_ACTION
+};
+
+typedef int tinywot_handler_func(
+  const struct tinywot_scratchpad *input, struct tinywot_scratchpad *output
+);
+
+struct tinywot_handler {
+  const char *name;
+  enum tinywot_operation_type op;
+  tinywot_handler_func *func;
+};
+
+struct tinywot_thing {
   size_t handlers_size;
-} TinyWoTThing;
+  struct tinywot_handler *handlers;
+};
 
-/**
- * \brief Process a `request` to `thing` using `config`.
- *
- * \param[in] thing   The Thing to expose.
- * \param[in] request The request received from protocol binding libraries.
- * \return A response returned by either:
- * - the handler, when a handler can be found.
- * - this method, when no handler can be found.
- */
-TinyWoTResponse tinywot_process(const TinyWoTThing *const thing,
-                                const TinyWoTRequest *const request);
+int tinywot_thing_get_handler(
+  const struct tinywot_thing *self,
+  const char *name,
+  enum tinywot_operation_type *op,
+  tinywot_handler_func **func
+);
+
+int tinywot_thing_set_handler(
+  struct tinywot_thing *self,
+  const char *name,
+  enum tinywot_operation_type op,
+  tinywot_handler_func *func
+);
+
+int tinywot_thing_read_property(
+  const struct tinywot_thing *self,
+  const char *name,
+  struct tinywot_scratchpad *output
+);
+
+int tinywot_thing_write_property(
+  const struct tinywot_thing *self,
+  const char *name,
+  const struct tinywot_scratchpad *input
+);
+
+int tinywot_thing_invoke_action(
+  const struct tinywot_thing *self,
+  const char *name,
+  const struct tinywot_scratchpad *input
+);
+
+enum tinywot_response_status {
+  TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
+  TINYWOT_RESPONSE_STATUS_OK,
+  TINYWOT_RESPONSE_STATUS_ERROR,
+  TINYWOT_RESPONSE_STATUS_NOT_FOUND,
+  TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED,
+  TINYWOT_RESPONSE_STATUS_NOT_ALLOWED
+};
+
+struct tinywot_request {
+  char *name;
+  enum tinywot_operation_type op;
+  struct tinywot_scratchpad *content;
+};
+
+struct tinywot_response {
+  enum tinywot_response_status status;
+  struct tinywot_scratchpad *content;
+};
+
+int tinywot_thing_process_request(
+  struct tinywot_thing *thing,
+  const struct tinywot_request *request,
+  struct tinywot_response *response
+);
+
+struct tinywot_simplehttp_config {
+  int (*read)(struct tinywot_scratchpad *buffer);
+  int (*write)(const struct tinywot_scratchpad *buffer);
+  struct tinywot_scratchpad *buffer;
+};
+
+int tinywot_simplehttp_receive(
+  const struct tinywot_simplehttp_config *config,
+  struct tinywot_request *request
+);
+
+int tinywot_simplehttp_send(
+  const struct tinywot_simplehttp_config *config,
+  const struct tinywot_response *response
+);
+
+int tinywot_simplehttp_process(const struct tinywot_simplehttp_config *config);
+
+struct tinywot_framework {
+  int _unused;
+};
+
+int tinywot_framework_init(
+  struct tinywot_framework *self, const unsigned char *td, size_t td_size
+);
+
+void tinywot_framework_set_reader(
+  struct tinywot_framework *self,
+  int (*reader)(struct tinywot_scratchpad *buffer)
+);
+
+void tinywot_framework_set_writer(
+  struct tinywot_framework *self,
+  int (*writer)(const struct tinywot_scratchpad *buffer)
+);
+
+int tinywot_framework_set_handler(
+  struct tinywot_framework *self,
+  const char *name,
+  enum tinywot_operation_type op,
+  tinywot_handler_func *func
+);
+
+int tinywot_framework_start(struct tinywot_framework *self);
 
 #ifdef __cplusplus
-}
+} /* extern "C" */
 #endif
+
+#endif /* ifndef TINYWOT_H */

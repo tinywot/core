@@ -1,10 +1,12 @@
-# Code format configuration for this project using clang-format
-# SPDX-FileCopyrightText: 2021 Junde Yhi <junde@yhi.moe>
+# SPDX-FileCopyrightText: 2021-2022 Junde Yhi <junde@yhi.moe>
 # SPDX-License-Identifier: CC0-1.0
 
 BasedOnStyle: LLVM
+AlignAfterOpenBracket: BlockIndent
 AlignEscapedNewlines: DontAlign
 AllowShortBlocksOnASingleLine: Empty
+BinPackArguments: false
+BinPackParameters: false
 ConstructorInitializerIndentWidth: 2
 ContinuationIndentWidth: 2
 IndentCaseLabels: true

@@ -1,9 +1,8 @@
-# Doxygen (https://www.doxygen.org) configuration file
-# SPDX-FileCopyrightText: 2021 Junde Yhi <junde@yhi.moe>
+# SPDX-FileCopyrightText: 2021-2022 Junde Yhi <junde@yhi.moe>
 # SPDX-License-Identifier: CC0-1.0
 
 PROJECT_NAME = "TinyWoT"
-PROJECT_NUMBER = "0.2.0"
+PROJECT_NUMBER = "0.3.0-dev"
 PROJECT_BRIEF = "A simple, light-weight Web of Thing (WoT) runtime library for resource-constrained devices."
 OUTPUT_DIRECTORY = docs
 TAB_SIZE = 2
@@ -12,4 +11,4 @@ INPUT = README.md include src
 USE_MDFILE_AS_MAINPAGE = README.md
 
 # Turn this on (YES) for private API documentation
-INTERNAL_DOCS = NO
+INTERNAL_DOCS = YES
