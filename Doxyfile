@@ -10,5 +10,12 @@ OPTIMIZE_OUTPUT_FOR_C = YES
 INPUT = README.md include src
 USE_MDFILE_AS_MAINPAGE = README.md
 
+# Prevent compiler attributes confusing Doxygen
+# https://www.doxygen.nl/manual/preprocessing.html
+ENABLE_PREPROCESSING = YES
+MACRO_EXPANSION = YES
+EXPAND_ONLY_PREDEF = YES
+PREDEFINED = __attribute__(x)=
+
 # Turn this on (YES) for private API documentation
-INTERNAL_DOCS = YES
+INTERNAL_DOCS = NO
