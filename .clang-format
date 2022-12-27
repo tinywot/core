@@ -10,3 +10,4 @@ BinPackParameters: false
 ConstructorInitializerIndentWidth: 2
 ContinuationIndentWidth: 2
 IndentCaseLabels: true
+QualifierAlignment: Right
