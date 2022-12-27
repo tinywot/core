@@ -5,81 +5,92 @@
 
 /*!
   \internal \file
+  \brief TinyWoT Thing method implementations.
 */
 
-#include "common.h"
+#include "internal.h"
 #include <stddef.h>
 
 #include <tinywot.h>
 
-static int find_handler(
-  const struct tinywot_thing *self,
-  const char *name,
+/******************** Public Functions ********************/
+
+int tinywot_thing_get_handler_function(
+  struct tinywot_thing const *self,
+  char const *name,
   enum tinywot_operation_type op,
-  struct tinywot_handler **handler
+  tinywot_handler_function_t **func
 ) {
   int status = TINYWOT_NOT_FOUND;
-  size_t i = 0;
 
-  *handler = NULL;
+  TINYWOT_REQUIRE(self);
+  TINYWOT_REQUIRE(name);
 
-  for (i = 0; i < self->handlers_size; i += 1) {
+  for (size_t i = 0; i < self->handlers_size; i += 1) {
     if (tinywot_strcmp(name, self->handlers[i].name) != 0) {
       continue;
     }
 
-    if (op != self->handlers[i].op) {
-      if (!*handler) {
-        status = TINYWOT_NOT_ALLOWED;
-      }
-
+    /* We do not allow an unknown / uninitialized operation type in a thing. */
+    if (op != self->handlers[i].op || op == TINYWOT_OPERATION_TYPE_UNKNOWN) {
+      status = TINYWOT_NOT_ALLOWED;
       continue;
     }
 
-    *handler = &self->handlers[i];
+    /* A user can choose to not retrieve the pointer because they only want to
+       know if the handler exists. */
+    if (func) {
+      *func = self->handlers[i].func;
+    }
+
     status = TINYWOT_SUCCESS;
 
-    /* continue; */
+    /* No security consideration for this naive implementation. */
+    break;
   }
 
   return status;
 }
 
-static int tinywot_thing_do(
-  const struct tinywot_thing *self,
-  const char *name,
+int tinywot_thing_do(
+  struct tinywot_thing const *self,
+  char const *name,
   enum tinywot_operation_type op,
-  const struct tinywot_scratchpad *input,
+  struct tinywot_scratchpad const *input,
   struct tinywot_scratchpad *output
 ) {
-  struct tinywot_handler *handler = NULL;
+  tinywot_handler_function_t *func = NULL;
   int status = 0;
 
-  status = find_handler(self, name, op, &handler);
+  TINYWOT_REQUIRE(self);
+  TINYWOT_REQUIRE(name);
+
+  status = tinywot_thing_get_handler_function(self, name, op, &func);
 
   if (status != TINYWOT_SUCCESS) {
     return status;
   }
 
-  if (!handler) {
-    return TINYWOT_NOT_FOUND;
-  }
+  TINYWOT_ASSERT(status == TINYWOT_SUCCESS);
 
-  if (!handler->func) {
+  /* We allow null pointer here to allow an entry behave like a stub. */
+  if (!func) {
     return TINYWOT_NOT_IMPLEMENTED;
   }
 
-  return handler->func(input, output);
+  /* `input` or `output` may be null, which the handler function should be aware
+     of. */
+  return func(input, output);
 }
 
 int tinywot_thing_read_property(
-  const struct tinywot_thing *self,
-  const char *name,
+  struct tinywot_thing const *self,
+  char const *name,
   struct tinywot_scratchpad *output
 ) {
-  if (!self || !name || !output) {
-    return TINYWOT_NULL_POINTER_ERROR;
-  }
+  TINYWOT_REQUIRE(self);
+  TINYWOT_REQUIRE(name);
+  TINYWOT_REQUIRE(output);
 
   return tinywot_thing_do(
     self, name, TINYWOT_OPERATION_TYPE_PROPERTY_READ, NULL, output
@@ -87,13 +98,13 @@ int tinywot_thing_read_property(
 }
 
 int tinywot_thing_write_property(
-  const struct tinywot_thing *self,
-  const char *name,
-  const struct tinywot_scratchpad *input
+  struct tinywot_thing const *self,
+  char const *name,
+  struct tinywot_scratchpad const *input
 ) {
-  if (!self || !name || !input) {
-    return TINYWOT_NULL_POINTER_ERROR;
-  }
+  TINYWOT_REQUIRE(self);
+  TINYWOT_REQUIRE(name);
+  TINYWOT_REQUIRE(input);
 
   return tinywot_thing_do(
     self, name, TINYWOT_OPERATION_TYPE_PROPERTY_WRITE, input, NULL
@@ -101,13 +112,13 @@ int tinywot_thing_write_property(
 }
 
 int tinywot_thing_invoke_action(
-  const struct tinywot_thing *self,
-  const char *name,
-  const struct tinywot_scratchpad *input
+  struct tinywot_thing const *self,
+  char const *name,
+  struct tinywot_scratchpad const *input
 ) {
-  if (!self || !name || !input) {
-    return TINYWOT_NULL_POINTER_ERROR;
-  }
+  TINYWOT_REQUIRE(self);
+  TINYWOT_REQUIRE(name);
+  TINYWOT_REQUIRE(input);
 
   return tinywot_thing_do(
     self, name, TINYWOT_OPERATION_TYPE_INVOKE_ACTION, input, NULL
@@ -116,19 +127,20 @@ int tinywot_thing_invoke_action(
 
 int tinywot_thing_process_request(
   struct tinywot_thing *thing,
-  const struct tinywot_request *request,
+  struct tinywot_request const *request,
   struct tinywot_response *response
 ) {
   int status = 0;
 
-  if (!thing || !request || !response) {
-    return TINYWOT_NULL_POINTER_ERROR;
-  }
+  TINYWOT_REQUIRE(thing);
+  TINYWOT_REQUIRE(request);
+  TINYWOT_REQUIRE(response);
 
   status = tinywot_thing_do(
     thing, request->name, request->op, request->content, response->content
   );
 
+  /* Map TinyWoT status codes to response status codes. */
   switch (status) {
     case TINYWOT_SUCCESS:
       response->status = TINYWOT_RESPONSE_STATUS_OK;
@@ -146,8 +158,9 @@ int tinywot_thing_process_request(
       response->status = TINYWOT_RESPONSE_STATUS_NOT_ALLOWED;
       break;
 
-    case TINYWOT_NULL_POINTER_ERROR: /* fall through */
-    case TINYWOT_GENERAL_ERROR:      /* fall through */
+    case TINYWOT_GENERAL_ERROR:
+      /* fall through */
+
     default:
       response->status = TINYWOT_RESPONSE_STATUS_ERROR;
       break;

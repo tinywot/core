@@ -5,12 +5,14 @@
 
 /*!
   \file
+  \brief TinyWoT public API definitions.
 */
 
 #ifndef TINYWOT_H
 #define TINYWOT_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,29 +25,15 @@ extern "C" {
   returned by library functions. Thing implementations should also use them to
   indicate their status.
 
-  Status codes are signed integer (`int`) values. Positive ones are various
-  run-time exceptions. Negative ones are critical -- usually programmaic --
-  errors. For example, `::TINYWOT_NULL_POINTER_ERROR` indicates that one or more
-  argument that should be valid pointers turn out to be `NULL` pointers at
-  run-time, which indicates a bug.
+  Status codes are signed integer (`int`) values.
 
   TinyWoT functions have their possible return values documented. TinyWoT also
-  expects and check all these status codes returned by the thing implementation
-  functions. The exact behaviors are discussed in the documentation of every
-  library function.
+  checks status codes returned by [Behavior
+  Implementation](https://www.w3.org/TR/wot-architecture11/#behavior-implementation)
+  functions according to these definitions.
 
   @{
 */
-
-/*!
-  \brief Null pointer error.
-
-  TinyWoT checks for NULL pointers for all public interfaces (functions). Any
-  non-nullable parameter that is found to be a `NULL` in run-time will trigger
-  an immediate return with this status code. Consult the documentation for
-  interfaces / functions for which parameters are non-nullable.
-*/
-#define TINYWOT_NULL_POINTER_ERROR (-1)
 
 /*!
   \brief General error.
@@ -156,133 +144,256 @@ struct tinywot_scratchpad {
   void *data;
 };
 
-void tinywot_scratchpad_forget(struct tinywot_scratchpad *self);
-void tinywot_scratchpad_free(struct tinywot_scratchpad *self);
+/*!
+  \brief "Semantic intention" of a request according to the Thing Description.
 
+  A full list of operation types can be found at [5.3.4.2 Form, the Web of
+  Things (WoT) Thing
+  Description](https://www.w3.org/TR/wot-thing-description11/#form)
+  specification. So far TinyWoT only supports a subset of them.
+
+  `::TINYWOT_OPERATION_TYPE_UNKNOWN` is a special value (`0`) indicating an
+  uninitialized operation type. TinyWoT treats this value as an error.
+*/
 enum tinywot_operation_type {
+  /*!
+    \brief An unknown or uninitialized opeartion type.
+  */
   TINYWOT_OPERATION_TYPE_UNKNOWN = 0,
+
+  /*!
+    \brief "Identifies the read operation on Property Affordances to retrieve
+    the corresponding data."
+  */
   TINYWOT_OPERATION_TYPE_PROPERTY_READ,
+
+  /*!
+    \brief "Identifies the write operation on Property Affordances to update the
+    corresponding data."
+  */
   TINYWOT_OPERATION_TYPE_PROPERTY_WRITE,
+
+  /*!
+    \brief "Identifies the invoke operation on Action Affordances to perform the
+    corresponding action."
+    */
   TINYWOT_OPERATION_TYPE_INVOKE_ACTION
 };
 
-typedef int tinywot_handler_func(
-  const struct tinywot_scratchpad *input, struct tinywot_scratchpad *output
+/*!
+  \brief Signature of a handler function implementing the behavior of an
+  affordance.
+
+  \param[in] input Data in request. The handler should not modify it.
+  \param[out] output Data to send out.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
+typedef int tinywot_handler_function_t(
+  struct tinywot_scratchpad const *input, struct tinywot_scratchpad *output
 );
 
+/*!
+  \brief A structure containing a handler function and its metadata.
+*/
 struct tinywot_handler {
-  const char *name;
+  /*!
+    \brief The name of this handler.
+
+    TinyWoT matches the name of incoming form with this to decide which handler
+    function to invoke.
+  */
+  char const *name;
+
+  /*!
+    \brief The allowed operation type of this handler.
+  */
   enum tinywot_operation_type op;
-  tinywot_handler_func *func;
+
+  /*!
+    \brief A function pointer to the actual handler implementation.
+  */
+  tinywot_handler_function_t *func;
 };
 
+/*!
+  \brief A thing.
+
+  It contains behavior implementations, which are `tinywot_handler`s.
+*/
 struct tinywot_thing {
+  /*!
+    \brief Size of `::handlers`.
+
+    This should be the number of `tinywot_handler`s in `::handlers`.
+  */
   size_t handlers_size;
+
+  /*!
+    \brief A list of `tinywot_handler`s.
+  */
   struct tinywot_handler *handlers;
 };
 
-int tinywot_thing_get_handler(
-  const struct tinywot_thing *self,
-  const char *name,
-  enum tinywot_operation_type *op,
-  tinywot_handler_func **func
-);
+/*!
+  \brief Get the handler function by specifying a name and a operation type.
 
-int tinywot_thing_set_handler(
-  struct tinywot_thing *self,
-  const char *name,
+  A `tinywot_handler_function_t` needs to exist in the `tinywot_thing` with its
+  `tinywot_handler::name` and `tinywot_handler::op` be exactly the same as the
+  ones passed into this function.
+
+  \param[in] self A `tinywot_thing`.
+  \param[in] name A name of the handler / affordance.
+  \param[in] op An opeartion type allowed by the handler.
+  \param[out] func The found handler function. Note that:
+    - This is nullable -- set a `NULL` here to only check if the handler exists
+      or not without checking out the pointer to the handler function.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
+int tinywot_thing_get_handler_function(
+  struct tinywot_thing const *self,
+  char const *name,
   enum tinywot_operation_type op,
-  tinywot_handler_func *func
+  tinywot_handler_function_t **func
 );
 
-int tinywot_thing_read_property(
-  const struct tinywot_thing *self,
-  const char *name,
+/*!
+  \brief Perform an operation on a `tinywot_thing`.
+
+  The operation is specified by `::op`. The function looks for the corresponding
+  entry in `::self`, invoke it if it exists, and then return its status code.
+
+  \param[in] self A `tinywot_thing`.
+  \param[in] name A name of the handler / affordance.
+  \param[in] op An opeartion type allowed by the handler.
+  \param[in] input A buffer for the invoked handler to read data in.
+  \param[out] output A buffer for the invoked handler to write data out.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
+int tinywot_thing_do(
+  struct tinywot_thing const *self,
+  char const *name,
+  enum tinywot_operation_type op,
+  struct tinywot_scratchpad const *input,
   struct tinywot_scratchpad *output
 );
 
+/*!
+  \brief Read a property from a `tinywot_thing`.
+
+  This is a wrapper of `tinywot_thing_do()` -- the operation type has been
+  implied by the function.
+
+  \param[in] self A `tinywot_thing`.
+  \param[in] name A name of the handler / affordance.
+  \param[out] output A buffer for the invoked handler to write data out.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
+int tinywot_thing_read_property(
+  struct tinywot_thing const *self,
+  char const *name,
+  struct tinywot_scratchpad *output
+);
+
+/*!
+  \brief Write a property from a `tinywot_thing`.
+
+  This is a wrapper of `tinywot_thing_do()` -- the operation type has been
+  implied by the function.
+
+  \param[in] self A `tinywot_thing`.
+  \param[in] name A name of the handler / affordance.
+  \param[in] input A buffer for the invoked handler to read data in.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
 int tinywot_thing_write_property(
-  const struct tinywot_thing *self,
-  const char *name,
-  const struct tinywot_scratchpad *input
+  struct tinywot_thing const *self,
+  char const *name,
+  struct tinywot_scratchpad const *input
 );
 
+/*!
+  \brief Invoke an action from a `tinywot_thing`.
+
+  This is a wrapper of `tinywot_thing_do()` -- the operation type has been
+  implied by the function.
+
+  \param[in] self A `tinywot_thing`.
+  \param[in] name A name of the handler / affordance.
+  \param[in] input A buffer for the invoked handler to read data in.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
 int tinywot_thing_invoke_action(
-  const struct tinywot_thing *self,
-  const char *name,
-  const struct tinywot_scratchpad *input
+  struct tinywot_thing const *self,
+  char const *name,
+  struct tinywot_scratchpad const *input
 );
 
+/*!
+  \brief Status codes used in `tinywot_response`s.
+*/
 enum tinywot_response_status {
+  /*!
+    \brief An unknown or uninitialized response status.
+
+    TinyWoT treats this value as an error.
+  */
   TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
+
+  /*! \brief Operation successful. */
   TINYWOT_RESPONSE_STATUS_OK,
+
+  /*! \brief Operation failed. */
   TINYWOT_RESPONSE_STATUS_ERROR,
+
+  /*! \brief Something is missing. */
   TINYWOT_RESPONSE_STATUS_NOT_FOUND,
+
+  /*! \brief No implementation for the request. */
   TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED,
+
+  /*! \brief The request cannot be accepted. */
   TINYWOT_RESPONSE_STATUS_NOT_ALLOWED
 };
 
+/*!
+  \brief A network request.
+*/
 struct tinywot_request {
+  /*! \brief Name of the Web of Thing affordance requested. */
   char *name;
+
+  /*! \brief The operation type requested. */
   enum tinywot_operation_type op;
+
+  /*! \brief The payload data sent along with the request. */
   struct tinywot_scratchpad *content;
 };
 
+/*!
+  \brief A network response.
+*/
 struct tinywot_response {
+  /*! \brief A status code for the response. */
   enum tinywot_response_status status;
+
+  /*! \brief The payload data to send along with the response. */
   struct tinywot_scratchpad *content;
 };
 
+/*!
+  \brief Produce a `tinywot_response` from a `tinywot_request` with a
+  `tinywot_thing`.
+
+  \param[in] thing A thing.
+  \param[in] request A network request.
+  \param[out] response A network response to be sent.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
 int tinywot_thing_process_request(
   struct tinywot_thing *thing,
-  const struct tinywot_request *request,
+  struct tinywot_request const *request,
   struct tinywot_response *response
 );
-
-struct tinywot_simplehttp_config {
-  int (*read)(struct tinywot_scratchpad *buffer);
-  int (*write)(const struct tinywot_scratchpad *buffer);
-  struct tinywot_scratchpad *buffer;
-};
-
-int tinywot_simplehttp_receive(
-  const struct tinywot_simplehttp_config *config,
-  struct tinywot_request *request
-);
-
-int tinywot_simplehttp_send(
-  const struct tinywot_simplehttp_config *config,
-  const struct tinywot_response *response
-);
-
-int tinywot_simplehttp_process(const struct tinywot_simplehttp_config *config);
-
-struct tinywot_framework {
-  int _unused;
-};
-
-int tinywot_framework_init(
-  struct tinywot_framework *self, const unsigned char *td, size_t td_size
-);
-
-void tinywot_framework_set_reader(
-  struct tinywot_framework *self,
-  int (*reader)(struct tinywot_scratchpad *buffer)
-);
-
-void tinywot_framework_set_writer(
-  struct tinywot_framework *self,
-  int (*writer)(const struct tinywot_scratchpad *buffer)
-);
-
-int tinywot_framework_set_handler(
-  struct tinywot_framework *self,
-  const char *name,
-  enum tinywot_operation_type op,
-  tinywot_handler_func *func
-);
-
-int tinywot_framework_start(struct tinywot_framework *self);
 
 #ifdef __cplusplus
 } /* extern "C" */
