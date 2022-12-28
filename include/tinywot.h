@@ -165,19 +165,109 @@ enum tinywot_operation_type {
     \brief "Identifies the read operation on Property Affordances to retrieve
     the corresponding data."
   */
-  TINYWOT_OPERATION_TYPE_PROPERTY_READ,
+  TINYWOT_OPERATION_TYPE_READPROPERTY,
 
   /*!
     \brief "Identifies the write operation on Property Affordances to update the
     corresponding data."
   */
-  TINYWOT_OPERATION_TYPE_PROPERTY_WRITE,
+  TINYWOT_OPERATION_TYPE_WRITEPROPERTY,
+
+  /*!
+    \brief "Identifies the observe operation on Property Affordances to be
+    notified with the new data when the Property is updated."
+  */
+  TINYWOT_OPERATION_TYPE_OBSERVEPROPERTY,
+
+  /*!
+    \brief "Identifies the unobserve operation on Property Affordances to stop
+    the corresponding notifications."
+  */
+  TINYWOT_OPERATION_TYPE_UNOBSERVEPROPERTY,
 
   /*!
     \brief "Identifies the invoke operation on Action Affordances to perform the
     corresponding action."
-    */
-  TINYWOT_OPERATION_TYPE_INVOKE_ACTION
+  */
+  TINYWOT_OPERATION_TYPE_INVOKEACTION,
+
+  /*!
+    \brief "Identifies the querying operation on Action Affordances to get the
+    status of the corresponding action."
+  */
+  TINYWOT_OPERATION_TYPE_QUERYACTION,
+
+  /*!
+    \brief "Identifies the cancel operation on Action Affordances to cancel the
+    ongoing corresponding action."
+  */
+  TINYWOT_OPERATION_TYPE_CANCELACTION,
+
+  /*!
+    \brief "Identifies the subscribe operation on Event Affordances to be
+    notified by the Thing when the event occurs."
+  */
+  TINYWOT_OPERATION_TYPE_SUBSCRIBEEVENT,
+
+  /*!
+    \brief "Identifies the unsubscribe operation on Event Affordances to stop
+    the corresponding notifications."
+  */
+  TINYWOT_OPERATION_TYPE_UNSUBSCRIBEEVENT,
+
+  /*!
+    \brief "Identifies the readallproperties operation on a Thing to retrieve
+    the data of all Properties in a single interaction."
+  */
+  TINYWOT_OPERATION_TYPE_READALLPROPERTIES,
+
+  /*!
+    \brief "Identifies the writeallproperties operation on a Thing to update the
+    data of all writable Properties in a single interaction."
+  */
+  TINYWOT_OPERATION_TYPE_WRITEALLPROPERTIES,
+
+  /*!
+    \brief "Identifies the readmultipleproperties operation on a Thing to
+    retrieve the data of selected Properties in a single interaction."
+  */
+  TINYWOT_OPERATION_TYPE_READMULTIPLEPROPERTIES,
+
+  /*!
+    \brief "Identifies the writemultipleproperties operation on a Thing to
+    update the data of selected writable Properties in a single interaction."
+  */
+  TINYWOT_OPERATION_TYPE_WRITEMULTIPLEPROPERTIES,
+
+  /*!
+    \brief "Identifies the observeallproperties operation on Properties to be
+    notified with new data when any Property is updated."
+  */
+  TINYWOT_OPERATION_TYPE_OBSERVEALLPROPERTIES,
+
+  /*!
+    \brief "Identifies the unobserveallproperties operation on Properties to
+    stop notifications from all Properties in a single interaction."
+  */
+  TINYWOT_OPERATION_TYPE_UNOBSERVEALLPROPERTIES,
+
+  /*!
+    \brief "Identifies the queryallactions operation on a Thing to get the
+    status of all Actions in a single interaction."
+  */
+  TINYWOT_OPERATION_TYPE_QUERYALLACTIONS,
+
+  /*!
+    \brief "Identifies the subscribeallevents operation on Events to subscribe
+    to notifications from all Events in a single interaction."
+  */
+  TINYWOT_OPERATION_TYPE_SUBSCRIBEALLEVENTS,
+
+  /*!
+    \brief "Identifies the unsubscribeallevents operation on Events to
+    unsubscribe from notifications from all Events in a single interaction."
+  */
+  TINYWOT_OPERATION_TYPE_UNSUBSCRIBEALLEVENTS
 };
 
 /*!

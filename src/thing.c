@@ -93,7 +93,7 @@ int tinywot_thing_read_property(
   TINYWOT_REQUIRE(output);
 
   return tinywot_thing_do(
-    self, name, TINYWOT_OPERATION_TYPE_PROPERTY_READ, NULL, output
+    self, name, TINYWOT_OPERATION_TYPE_READPROPERTY, NULL, output
   );
 }
 
@@ -107,7 +107,7 @@ int tinywot_thing_write_property(
   TINYWOT_REQUIRE(input);
 
   return tinywot_thing_do(
-    self, name, TINYWOT_OPERATION_TYPE_PROPERTY_WRITE, input, NULL
+    self, name, TINYWOT_OPERATION_TYPE_WRITEPROPERTY, input, NULL
   );
 }
 
@@ -121,7 +121,7 @@ int tinywot_thing_invoke_action(
   TINYWOT_REQUIRE(input);
 
   return tinywot_thing_do(
-    self, name, TINYWOT_OPERATION_TYPE_INVOKE_ACTION, input, NULL
+    self, name, TINYWOT_OPERATION_TYPE_INVOKEACTION, input, NULL
   );
 }
 
