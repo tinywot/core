@@ -73,7 +73,7 @@ extern "C" {
 */
 #define TINYWOT_NOT_ALLOWED 4
 
-/*! \} */
+/*! \} */ /* defgroup tinywot_status */
 
 /*!
   \brief A value specifying an unknown content type / format.
@@ -271,6 +271,72 @@ enum tinywot_operation_type {
 };
 
 /*!
+  \defgroup tinywot_req_and_res Requests and Responses
+
+  \{
+*/
+
+/*!
+  \brief Status codes used in `tinywot_response`s.
+*/
+enum tinywot_response_status {
+  /*!
+    \brief An unknown or uninitialized response status.
+
+    TinyWoT treats this value as an error.
+  */
+  TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
+
+  /*! \brief Operation successful. */
+  TINYWOT_RESPONSE_STATUS_OK,
+
+  /*! \brief Operation failed. */
+  TINYWOT_RESPONSE_STATUS_ERROR,
+
+  /*! \brief Something is missing. */
+  TINYWOT_RESPONSE_STATUS_NOT_FOUND,
+
+  /*! \brief No implementation for the request. */
+  TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED,
+
+  /*! \brief The request cannot be accepted. */
+  TINYWOT_RESPONSE_STATUS_NOT_ALLOWED
+};
+
+/*!
+  \brief A network request.
+*/
+struct tinywot_request {
+  /*! \brief Name of the Web of Thing affordance requested. */
+  char *name;
+
+  /*! \brief The operation type requested. */
+  enum tinywot_operation_type op;
+
+  /*! \brief The payload data sent along with the request. */
+  struct tinywot_scratchpad *content;
+};
+
+/*!
+  \brief A network response.
+*/
+struct tinywot_response {
+  /*! \brief A status code for the response. */
+  enum tinywot_response_status status;
+
+  /*! \brief The payload data to send along with the response. */
+  struct tinywot_scratchpad *content;
+};
+
+/*! \} */ /* defgroup tinywot_req_and_res */
+
+/*!
+  \defgroup tinywot_thing Thing
+
+  \{
+*/
+
+/*!
   \brief Signature of a handler function implementing the behavior of an
   affordance.
 
@@ -339,23 +405,26 @@ struct tinywot_thing {
   \param[in] self A `tinywot_thing`.
   \param[in] name A name of the handler / affordance.
   \param[in] op An opeartion type allowed by the handler.
-  \param[out] func The found handler function. Note that:
-    - This is nullable -- set a `NULL` here to only check if the handler exists
-      or not without checking out the pointer to the handler function.
+  \param[out] func The found handler function. This is nullable -- set a `NULL`
+  here to only check if the handler exists or not without checking out the
+  pointer to the handler function.
+  \param[out] user_data The associated user data for `func`. This is nullable
+  -- set a `NULL` here to not retrieve the pointer to `user_data`.
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 int tinywot_thing_get_handler_function(
   struct tinywot_thing const *self,
   char const *name,
   enum tinywot_operation_type op,
-  tinywot_handler_function_t **func
+  tinywot_handler_function_t **func,
+  void **user_data
 );
 
 /*!
   \brief Perform an operation on a `tinywot_thing`.
 
-  The operation is specified by `::op`. The function looks for the corresponding
-  entry in `::self`, invoke it if it exists, and then return its status code.
+  The operation is specified by `op`. The function looks for the corresponding
+  entry in `self`, invoke it if it exists, and then return its status code.
 
   \param[in] self A `tinywot_thing`.
   \param[in] name A name of the handler / affordance.
@@ -424,58 +493,6 @@ int tinywot_thing_invoke_action(
 );
 
 /*!
-  \brief Status codes used in `tinywot_response`s.
-*/
-enum tinywot_response_status {
-  /*!
-    \brief An unknown or uninitialized response status.
-
-    TinyWoT treats this value as an error.
-  */
-  TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
-
-  /*! \brief Operation successful. */
-  TINYWOT_RESPONSE_STATUS_OK,
-
-  /*! \brief Operation failed. */
-  TINYWOT_RESPONSE_STATUS_ERROR,
-
-  /*! \brief Something is missing. */
-  TINYWOT_RESPONSE_STATUS_NOT_FOUND,
-
-  /*! \brief No implementation for the request. */
-  TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED,
-
-  /*! \brief The request cannot be accepted. */
-  TINYWOT_RESPONSE_STATUS_NOT_ALLOWED
-};
-
-/*!
-  \brief A network request.
-*/
-struct tinywot_request {
-  /*! \brief Name of the Web of Thing affordance requested. */
-  char *name;
-
-  /*! \brief The operation type requested. */
-  enum tinywot_operation_type op;
-
-  /*! \brief The payload data sent along with the request. */
-  struct tinywot_scratchpad *content;
-};
-
-/*!
-  \brief A network response.
-*/
-struct tinywot_response {
-  /*! \brief A status code for the response. */
-  enum tinywot_response_status status;
-
-  /*! \brief The payload data to send along with the response. */
-  struct tinywot_scratchpad *content;
-};
-
-/*!
   \brief Produce a `tinywot_response` from a `tinywot_request` with a
   `tinywot_thing`.
 
@@ -489,6 +506,8 @@ int tinywot_thing_process_request(
   struct tinywot_request const *request,
   struct tinywot_response *response
 );
+
+/*! \} */ /* defgroup tinywot_thing */
 
 #ifdef __cplusplus
 } /* extern "C" */

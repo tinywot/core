@@ -19,7 +19,8 @@ int tinywot_thing_get_handler_function(
   struct tinywot_thing const *self,
   char const *name,
   enum tinywot_operation_type op,
-  tinywot_handler_function_t **func
+  tinywot_handler_function_t **func,
+  void **user_data
 ) {
   int status = TINYWOT_NOT_FOUND;
 
@@ -37,10 +38,14 @@ int tinywot_thing_get_handler_function(
       continue;
     }
 
-    /* A user can choose to not retrieve the pointer because they only want to
-       know if the handler exists. */
+    /* A user can choose to not retrieve the pointers if they only want to know
+       whether the handler exists (by checking the return code). */
     if (func) {
       *func = self->handlers[i].func;
+    }
+
+    if (user_data) {
+      *user_data = self->handlers[i].user_data;
     }
 
     status = TINYWOT_SUCCESS;
@@ -60,12 +65,13 @@ int tinywot_thing_do(
   struct tinywot_scratchpad *output
 ) {
   tinywot_handler_function_t *func = NULL;
+  void *user_data = NULL;
   int status = 0;
 
   TINYWOT_REQUIRE(self);
   TINYWOT_REQUIRE(name);
 
-  status = tinywot_thing_get_handler_function(self, name, op, &func);
+  status = tinywot_thing_get_handler_function(self, name, op, &func, &user_data);
 
   if (status != TINYWOT_SUCCESS) {
     return status;
@@ -80,7 +86,7 @@ int tinywot_thing_do(
 
   /* `input` or `output` may be null, which the handler function should be aware
      of. */
-  return func(input, output);
+  return func(input, output, user_data);
 }
 
 int tinywot_thing_read_property(
