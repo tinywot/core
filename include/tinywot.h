@@ -279,7 +279,7 @@ enum tinywot_operation_type {
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 typedef int tinywot_handler_function_t(
-  struct tinywot_scratchpad const *input, struct tinywot_scratchpad *output
+  struct tinywot_scratchpad const *input, struct tinywot_scratchpad *output, void *user_data
 );
 
 /*!
@@ -303,6 +303,11 @@ struct tinywot_handler {
     \brief A function pointer to the actual handler implementation.
   */
   tinywot_handler_function_t *func;
+
+  /*!
+    \brief Arbitrary data to pass when `::func` is called.
+  */
+  void *user_data;
 };
 
 /*!
