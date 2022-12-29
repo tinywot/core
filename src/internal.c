@@ -8,7 +8,6 @@
   \brief TinyWoT internal API declarations.
 */
 
-#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -20,18 +19,8 @@ tinywot_fatal_error_handler(char const *file, size_t line, unsigned int code) {
   (void)line;
   (void)code;
 
-  while (true) {}
+  while (1) {}
 }
-
-#ifdef TINYWOT_ENABLE_CONTRACTS
-__attribute__((__weak__)) void tinywot_contract_check(
-  bool cond, char const *file, size_t line, unsigned int code
-) {
-  if (!cond) {
-    tinywot_fatal_error_handler(file, line, code);
-  }
-}
-#endif /* ifdef TINYWOT_ENABLE_CONTRACTS */
 
 #ifdef TINYWOT_ENABLE_DYNAMIC_MEMORY
 __attribute__((__weak__)) void *tinywot_malloc(size_t size) {

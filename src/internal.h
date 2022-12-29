@@ -27,41 +27,46 @@ tinywot_fatal_error_handler(char const *file, size_t line, unsigned int code);
 #define TINYWOT_FATAL_ERROR_CODE_PRECONDITION_FAILURE 2u
 #define TINYWOT_FATAL_ERROR_CODE_POSTCONDITION_FAILURE 3u
 
-void tinywot_contract_check(
-  bool cond, char const *file, size_t line, unsigned int code
-);
-
-#define TINYWOT_UNREACHABLE(expr) \
-  tinywot_contract_check( \
-    (bool)(expr), \
+#define TINYWOT_UNREACHABLE() \
+  tinywot_fatal_error_handler( \
     __FILE__, \
     __LINE__, \
     TINYWOT_FATAL_ERROR_CODE_UNREACHABLE_STATEMENT_REACHED \
   )
 
 #define TINYWOT_ASSERT(expr) \
-  tinywot_contract_check( \
-    (bool)(expr), \
-    __FILE__, \
-    __LINE__, \
-    TINYWOT_FATAL_ERROR_CODE_ASSERTION_FAILURE \
-  )
+  do { \
+    if (!(expr)) { \
+      tinywot_fatal_error_handler( \
+        __FILE__, \
+        __LINE__, \
+        TINYWOT_FATAL_ERROR_CODE_ASSERTION_FAILURE \
+      ); \
+    } \
+  } while (0)
 
 #define TINYWOT_REQUIRE(expr) \
-  tinywot_contract_check( \
-    (bool)(expr), \
-    __FILE__, \
-    __LINE__, \
-    TINYWOT_FATAL_ERROR_CODE_PRECONDITION_FAILURE \
-  )
+  do { \
+    if (!(expr)) { \
+      tinywot_fatal_error_handler( \
+        __FILE__, \
+        __LINE__, \
+        TINYWOT_FATAL_ERROR_CODE_PRECONDITION_FAILURE \
+      ); \
+    } \
+  } while (0)
 
 #define TINYWOT_ENSURE(expr) \
-  tinywot_contract_check( \
-    (bool)(expr), \
-    __FILE__, \
-    __LINE__, \
-    TINYWOT_FATAL_ERROR_CODE_POSTCONDITION_FAILURE \
-  )
+  do { \
+    if (!(expr)) { \
+      tinywot_fatal_error_handler( \
+        __FILE__, \
+        __LINE__, \
+        TINYWOT_FATAL_ERROR_CODE_POSTCONDITION_FAILURE \
+      ); \
+    } \
+  } while (0)
+
 #else
 #define TINYWOT_UNREACHABLE(expr)
 #define TINYWOT_ASSERT(expr)
