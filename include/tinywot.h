@@ -32,7 +32,7 @@ extern "C" {
   Implementation](https://www.w3.org/TR/wot-architecture11/#behavior-implementation)
   functions according to these definitions.
 
-  @{
+  \{
 */
 
 /*!
@@ -73,7 +73,7 @@ extern "C" {
 */
 #define TINYWOT_NOT_ALLOWED 4
 
-/*! @} */
+/*! \} */
 
 /*!
   \brief A value specifying an unknown content type / format.
