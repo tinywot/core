@@ -1,5 +1,5 @@
 /*
-  SPDX-FileCopyrightText: 2021-2022 Junde Yhi <junde@yhi.moe>
+  SPDX-FileCopyrightText: 2021-2023 Junde Yhi <junde@yhi.moe>
   SPDX-License-Identifier: MIT
 */
 
@@ -84,7 +84,8 @@ extern "C" {
   magic value chosen to be within the "Reserved for Experimental Use" allocation
   in the [IANA CoAP Content-Formats
   registry](https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats),
-  in the hope that it is not usually used by other developers.
+  in the hope that it is not usually used by other developers. It is not `0`
+  because it has been allocated to `text/plain; charset=utf-8` in the registry.
 
   \note In fact, according to
   [RFC7252](https://www.rfc-editor.org/rfc/rfc7252.html), CoAP Content-Format
@@ -143,6 +144,26 @@ struct tinywot_scratchpad {
   */
   void *data;
 };
+
+#define TINYWOT_SCRATCHPAD_EMPTY \
+  (struct tinywot_scratchpad){0u, 0u, TINYWOT_TYPE_UNKNOWN, NULL}
+
+struct tinywot_scratchpad tinywot_scratchpad_new(void);
+struct tinywot_scratchpad tinywot_scratchpad_new_with_empty_memory(
+  void *ptr,
+  size_t size
+);
+struct tinywot_scratchpad tinywot_scratchpad_new_with_type_hint(
+  void *ptr,
+  size_t size,
+  unsigned int type_hint
+);
+struct tinywot_scratchpad tinywot_scratchpad_new_with_used_memory(
+  void *ptr,
+  size_t size,
+  size_t valid_size,
+  unsigned int type_hint
+);
 
 /*!
   \brief "Semantic intention" of a request according to the Thing Description.
@@ -331,7 +352,7 @@ struct tinywot_response {
 /*! \} */ /* defgroup tinywot_req_and_res */
 
 /*!
-  \defgroup tinywot_thing Thing
+  \defgroup tinywot_thing Behavior Implementation
 
   \{
 */
@@ -345,7 +366,9 @@ struct tinywot_response {
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 typedef int tinywot_handler_function_t(
-  struct tinywot_scratchpad const *input, struct tinywot_scratchpad *output, void *user_data
+  struct tinywot_scratchpad const *input,
+  struct tinywot_scratchpad *output,
+  void *user_data
 );
 
 /*!
@@ -502,12 +525,118 @@ int tinywot_thing_invoke_action(
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 int tinywot_thing_process_request(
-  struct tinywot_thing *thing,
+  struct tinywot_thing const *thing,
   struct tinywot_request const *request,
   struct tinywot_response *response
 );
 
 /*! \} */ /* defgroup tinywot_thing */
+
+/*!
+  \defgroup tinywot_io Device-specific Input / Output Interfaces
+
+  \{
+*/
+
+/*!
+  \brief Signature of a function reading data from the network.
+
+  \param[out] ptr A pointer pointing to a valid region of memory.
+  \param[in] toread The number of bytes to read and place to `ptr`.
+  \param[out] read THe number of bytes that have actually been read.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
+typedef int tinywot_io_read_function_t(
+  unsigned char *ptr, size_t toread, size_t *read
+);
+
+/*!
+  \brief Signature of a function writing data to the network.
+
+  \param[out] ptr A pointer pointing to a valid region of memory.
+  \param[in] towrite The number of bytes to write from `ptr`.
+  \param[out] written THe number of bytes that have actually been written out.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
+typedef int tinywot_io_write_function_t(
+  unsigned char const *ptr, size_t towrite, size_t *written
+);
+
+/*!
+  \brief A group of \ref tinywot_io_read_function_t and \ref
+  tinywot_io_write_function_t.
+*/
+struct tinywot_io {
+  /*! \brief A pointer to the function reading data from the network. */
+  tinywot_io_read_function_t *read;
+  /*! \brief A pointer to the function writing data to the network. */
+  tinywot_io_write_function_t *write;
+};
+
+/*! \} */ /* defgroup tinywot_io */
+
+/*!
+  \defgroup tinywot_protocol Protocol Stack Implementation Interfaces
+
+  \{
+*/
+
+/*!
+  \brief Signature of a function producing a \ref tinywot_request using \ref
+  tinywot_io functions.
+
+  \param[out] request A valid pointer to a \ref tinywot_request storing the
+  received network request.
+  \param[in] io A \ref tinywot_io containing a read function and a write
+  function.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \sa tinywot_io
+*/
+typedef int tinywot_protocol_receive_function_t(
+  struct tinywot_request *request, struct tinywot_io const *io
+);
+
+/*!
+  \brief Signature of a function producing a \ref tinywot_response using \ref
+  tinywot_io functions.
+
+  \param[out] response A valid pointer to a \ref tinywot_response storing the
+  received network request.
+  \param[in] io A \ref tinywot_io containing a read function and a write
+  function.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \sa tinywot_io
+*/
+typedef int tinywot_protocol_send_function_t(
+  struct tinywot_response const *response, struct tinywot_io const *io
+);
+
+/*!
+  \brief A group of \ref tinywot_protocol_receive_function_t and \ref
+  tinywot_protocol_send_function_t.
+*/
+struct tinywot_protocol {
+  tinywot_protocol_receive_function_t *receive;
+  tinywot_protocol_send_function_t *send;
+};
+
+/*! \} */ /* defgroup tinywot_protocol */
+
+/*!
+  \defgroup tinywot_servient Servient
+
+  \{
+*/
+
+struct tinywot_servient {
+  struct tinywot_thing const thing;
+  struct tinywot_protocol const protocol;
+  struct tinywot_io const io;
+};
+
+int tinywot_servient_run(struct tinywot_servient const *servicent);
+
+/*! \} */ /* defgroup tinywot_servient */
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -1,25 +1,31 @@
 /*
-  SPDX-FileCopyrightText: 2022 Junde Yhi <junde@yhi.moe>
+  SPDX-FileCopyrightText: 2022-2023 Junde Yhi <junde@yhi.moe>
   SPDX-License-Identifier: MIT
 */
 
 /*!
   \internal \file
-  \brief TinyWoT internal API definitions.
+  \brief Underlying interface declarations.
+
+  This is an abstraction layer of some basic functions and internal interfaces
+  used across TinyWoT. The application code can override these functions by
+  defining the same function again. This is done via [weak
+  symbol](https://en.wikipedia.org/wiki/Weak_symbol) defined in
+  `base-default.c` as default implementations for these functions.
 */
 
-#ifndef TINYWOT_COMMON_H
-#define TINYWOT_COMMON_H
+#ifndef TINYWOT_BASE_H
+#define TINYWOT_BASE_H
 
-#include <stdbool.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-__attribute__((__noreturn__)) void
-tinywot_fatal_error_handler(char const *file, size_t line, unsigned int code);
+void tinywot_fatal_error_handler(
+  char const *file, size_t line, unsigned int code
+) __attribute__((__noreturn__));
 
 #ifdef TINYWOT_ENABLE_CONTRACTS
 #define TINYWOT_FATAL_ERROR_CODE_UNREACHABLE_STATEMENT_REACHED 0u
@@ -29,18 +35,14 @@ tinywot_fatal_error_handler(char const *file, size_t line, unsigned int code);
 
 #define TINYWOT_UNREACHABLE() \
   tinywot_fatal_error_handler( \
-    __FILE__, \
-    __LINE__, \
-    TINYWOT_FATAL_ERROR_CODE_UNREACHABLE_STATEMENT_REACHED \
+    __FILE__, __LINE__, TINYWOT_FATAL_ERROR_CODE_UNREACHABLE_STATEMENT_REACHED \
   )
 
 #define TINYWOT_ASSERT(expr) \
   do { \
     if (!(expr)) { \
       tinywot_fatal_error_handler( \
-        __FILE__, \
-        __LINE__, \
-        TINYWOT_FATAL_ERROR_CODE_ASSERTION_FAILURE \
+        __FILE__, __LINE__, TINYWOT_FATAL_ERROR_CODE_ASSERTION_FAILURE \
       ); \
     } \
   } while (0)
@@ -49,9 +51,7 @@ tinywot_fatal_error_handler(char const *file, size_t line, unsigned int code);
   do { \
     if (!(expr)) { \
       tinywot_fatal_error_handler( \
-        __FILE__, \
-        __LINE__, \
-        TINYWOT_FATAL_ERROR_CODE_PRECONDITION_FAILURE \
+        __FILE__, __LINE__, TINYWOT_FATAL_ERROR_CODE_PRECONDITION_FAILURE \
       ); \
     } \
   } while (0)
@@ -60,9 +60,7 @@ tinywot_fatal_error_handler(char const *file, size_t line, unsigned int code);
   do { \
     if (!(expr)) { \
       tinywot_fatal_error_handler( \
-        __FILE__, \
-        __LINE__, \
-        TINYWOT_FATAL_ERROR_CODE_POSTCONDITION_FAILURE \
+        __FILE__, __LINE__, TINYWOT_FATAL_ERROR_CODE_POSTCONDITION_FAILURE \
       ); \
     } \
   } while (0)
@@ -75,8 +73,8 @@ tinywot_fatal_error_handler(char const *file, size_t line, unsigned int code);
 #endif /* ifdef TINYWOT_ENABLE_CONTRACTS */
 
 #ifdef TINYWOT_ENABLE_DYNAMIC_MEMORY
-void *tinywot_malloc(size_t size);
 void tinywot_free(void *ptr);
+void *tinywot_malloc(size_t size) __attribute__((__malloc__(tinywot_free)));
 #endif /* ifdef TINYWOT_ENABLE_DYNAMIC_MEMORY */
 
 /*!
@@ -102,4 +100,4 @@ int tinywot_strcmp(char const *lhs, char const *rhs);
 } /* extern "C" */
 #endif
 
-#endif /* ifndef TINYWOT_COMMON_H */
+#endif /* ifndef TINYWOT_BASE_H */

@@ -1,19 +1,57 @@
 /*
-  SPDX-FileCopyrightText: 2021-2022 Junde Yhi <junde@yhi.moe>
+  SPDX-FileCopyrightText: 2021-2023 Junde Yhi <junde@yhi.moe>
   SPDX-License-Identifier: MIT
 */
 
 /*!
-  \internal \file
-  \brief TinyWoT Thing method implementations.
+  \file
+  \brief TinyWoT public API implementations.
 */
 
-#include "internal.h"
-#include <stddef.h>
+#include "base.h"
+#include <string.h>
 
 #include <tinywot.h>
 
-/******************** Public Functions ********************/
+struct tinywot_scratchpad tinywot_scratchpad_new(void) {
+  return TINYWOT_SCRATCHPAD_EMPTY;
+}
+
+struct tinywot_scratchpad tinywot_scratchpad_new_with_empty_memory(
+  void *ptr,
+  size_t size
+) {
+  struct tinywot_scratchpad ret = TINYWOT_SCRATCHPAD_EMPTY;
+  ret.data = ptr;
+  ret.size = size;
+  return ret;
+}
+
+struct tinywot_scratchpad tinywot_scratchpad_new_with_type_hint(
+  void *ptr,
+  size_t size,
+  unsigned int type_hint
+) {
+  struct tinywot_scratchpad ret = TINYWOT_SCRATCHPAD_EMPTY;
+  ret.data = ptr;
+  ret.size = size;
+  ret.type_hint = type_hint;
+  return ret;
+}
+
+struct tinywot_scratchpad tinywot_scratchpad_new_with_used_memory(
+  void *ptr,
+  size_t size,
+  size_t valid_size,
+  unsigned int type_hint
+) {
+  struct tinywot_scratchpad ret = TINYWOT_SCRATCHPAD_EMPTY;
+  ret.data = ptr;
+  ret.size = size;
+  ret.valid_size = valid_size;
+  ret.type_hint = type_hint;
+  return ret;
+}
 
 int tinywot_thing_get_handler_function(
   struct tinywot_thing const *self,
@@ -71,7 +109,8 @@ int tinywot_thing_do(
   TINYWOT_REQUIRE(self);
   TINYWOT_REQUIRE(name);
 
-  status = tinywot_thing_get_handler_function(self, name, op, &func, &user_data);
+  status =
+    tinywot_thing_get_handler_function(self, name, op, &func, &user_data);
 
   if (status != TINYWOT_SUCCESS) {
     return status;
@@ -132,7 +171,7 @@ int tinywot_thing_invoke_action(
 }
 
 int tinywot_thing_process_request(
-  struct tinywot_thing *thing,
+  struct tinywot_thing const *thing,
   struct tinywot_request const *request,
   struct tinywot_response *response
 ) {
