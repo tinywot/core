@@ -17,33 +17,16 @@ struct tinywot_scratchpad tinywot_scratchpad_new(void) {
   return TINYWOT_SCRATCHPAD_EMPTY;
 }
 
-struct tinywot_scratchpad tinywot_scratchpad_new_with_empty_memory(
-  void *ptr,
-  size_t size
-) {
+struct tinywot_scratchpad
+tinywot_scratchpad_new_with_empty_memory(void *ptr, size_t size) {
   struct tinywot_scratchpad ret = TINYWOT_SCRATCHPAD_EMPTY;
   ret.data = ptr;
   ret.size = size;
-  return ret;
-}
-
-struct tinywot_scratchpad tinywot_scratchpad_new_with_type_hint(
-  void *ptr,
-  size_t size,
-  unsigned int type_hint
-) {
-  struct tinywot_scratchpad ret = TINYWOT_SCRATCHPAD_EMPTY;
-  ret.data = ptr;
-  ret.size = size;
-  ret.type_hint = type_hint;
   return ret;
 }
 
 struct tinywot_scratchpad tinywot_scratchpad_new_with_used_memory(
-  void *ptr,
-  size_t size,
-  size_t valid_size,
-  unsigned int type_hint
+  void *ptr, size_t size, size_t valid_size, unsigned int type_hint
 ) {
   struct tinywot_scratchpad ret = TINYWOT_SCRATCHPAD_EMPTY;
   ret.data = ptr;
@@ -60,7 +43,7 @@ int tinywot_thing_get_handler_function(
   tinywot_handler_function_t **func,
   void **user_data
 ) {
-  int status = TINYWOT_NOT_FOUND;
+  int status = TINYWOT_ERROR_NOT_FOUND;
 
   TINYWOT_REQUIRE(self);
   TINYWOT_REQUIRE(name);
@@ -72,7 +55,7 @@ int tinywot_thing_get_handler_function(
 
     /* We do not allow an unknown / uninitialized operation type in a thing. */
     if (op != self->handlers[i].op || op == TINYWOT_OPERATION_TYPE_UNKNOWN) {
-      status = TINYWOT_NOT_ALLOWED;
+      status = TINYWOT_ERROR_NOT_ALLOWED;
       continue;
     }
 
@@ -120,7 +103,7 @@ int tinywot_thing_do(
 
   /* We allow null pointer here to allow an entry behave like a stub. */
   if (!func) {
-    return TINYWOT_NOT_IMPLEMENTED;
+    return TINYWOT_ERROR_NOT_IMPLEMENTED;
   }
 
   /* `input` or `output` may be null, which the handler function should be aware
@@ -171,18 +154,18 @@ int tinywot_thing_invoke_action(
 }
 
 int tinywot_thing_process_request(
-  struct tinywot_thing const *thing,
+  struct tinywot_thing const *self,
   struct tinywot_request const *request,
   struct tinywot_response *response
 ) {
   int status = 0;
 
-  TINYWOT_REQUIRE(thing);
+  TINYWOT_REQUIRE(self);
   TINYWOT_REQUIRE(request);
   TINYWOT_REQUIRE(response);
 
   status = tinywot_thing_do(
-    thing, request->name, request->op, request->content, response->content
+    self, request->name, request->op, request->content, response->content
   );
 
   /* Map TinyWoT status codes to response status codes. */
@@ -191,19 +174,19 @@ int tinywot_thing_process_request(
       response->status = TINYWOT_RESPONSE_STATUS_OK;
       break;
 
-    case TINYWOT_NOT_FOUND:
+    case TINYWOT_ERROR_NOT_FOUND:
       response->status = TINYWOT_RESPONSE_STATUS_NOT_FOUND;
       break;
 
-    case TINYWOT_NOT_IMPLEMENTED:
+    case TINYWOT_ERROR_NOT_IMPLEMENTED:
       response->status = TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED;
       break;
 
-    case TINYWOT_NOT_ALLOWED:
+    case TINYWOT_ERROR_NOT_ALLOWED:
       response->status = TINYWOT_RESPONSE_STATUS_NOT_ALLOWED;
       break;
 
-    case TINYWOT_GENERAL_ERROR:
+    case TINYWOT_ERROR_GENERAL_ERROR:
       /* fall through */
 
     default:
@@ -212,4 +195,11 @@ int tinywot_thing_process_request(
   }
 
   return status;
+}
+
+int tinywot_servient_run(struct tinywot_servient const *self) {
+  (void)self;
+
+  /* TODO: Not implemented yet! */
+  return TINYWOT_ERROR_NOT_IMPLEMENTED;
 }

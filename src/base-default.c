@@ -5,7 +5,7 @@
 
 /*!
   \internal \file
-  \brief Basic, underlying internal interface implementations.
+  \brief Underlying interface default implementations.
 */
 
 #include <stdlib.h>

@@ -10,8 +10,8 @@
   This is an abstraction layer of some basic functions and internal interfaces
   used across TinyWoT. The application code can override these functions by
   defining the same function again. This is done via [weak
-  symbol](https://en.wikipedia.org/wiki/Weak_symbol) defined in
-  `base-default.c` as default implementations for these functions.
+  symbol](https://en.wikipedia.org/wiki/Weak_symbol) defined in `base-default.c`
+  as default implementations for these functions.
 */
 
 #ifndef TINYWOT_BASE_H

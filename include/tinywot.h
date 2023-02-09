@@ -25,45 +25,15 @@ extern "C" {
   returned by library functions. Thing implementations should also use them to
   indicate their status.
 
-  Status codes are signed integer (`int`) values.
+  Status codes are signed integer (`int`) values. Errors are negative.
 
   TinyWoT functions have their possible return values documented. TinyWoT also
-  checks status codes returned by [Behavior
-  Implementation](https://www.w3.org/TR/wot-architecture11/#behavior-implementation)
-  functions according to these definitions.
+  checks status codes returned by [Behavior Implementation](
+  https://www.w3.org/TR/wot-architecture11/#behavior-implementation) functions
+  according to these definitions. Your application should use them too.
 
   \{
 */
-
-/*!
-  \brief General error.
-
-  This is used to indicate an error without specifying a reason.
-*/
-#define TINYWOT_GENERAL_ERROR 0
-
-/*!
-  \brief Success.
-
-  This is not an error.
-*/
-#define TINYWOT_SUCCESS 1
-
-/*!
-  \brief Something is missing.
-
-  For example, if a given WoT affordance name does not exist in a thing, then
-  this code will be returned.
-*/
-#define TINYWOT_NOT_FOUND 2
-
-/*!
-  \brief A function is not implemented.
-
-  For example, if a given WoT affordance name is associated without a valid
-  handler function (set to `NULL`), then this code will be returned.
-*/
-#define TINYWOT_NOT_IMPLEMENTED 3
 
 /*!
   \brief A requested operation is not allowed.
@@ -71,7 +41,53 @@ extern "C" {
   For example, if a given WoT affordance name exists, but cannot accept the
   given operation type, then this code will be returned.
 */
-#define TINYWOT_NOT_ALLOWED 4
+#define TINYWOT_ERROR_NOT_ALLOWED (-4)
+
+/*!
+  \brief A function is not implemented.
+
+  For example, if a given WoT affordance name is associated without a valid
+  handler function (set to `NULL`), then this code will be returned.
+*/
+#define TINYWOT_ERROR_NOT_IMPLEMENTED (-3)
+
+/*!
+  \brief Something is missing.
+
+  For example, if a given WoT affordance name does not exist in a thing, then
+  this code will be returned.
+*/
+#define TINYWOT_ERROR_NOT_FOUND (-2)
+
+/*!
+  \brief General error.
+
+  This is used to indicate an error without specifying a reason.
+*/
+#define TINYWOT_ERROR_GENERAL_ERROR (0)
+
+/*!
+  \brief Success.
+
+  This is not an error.
+*/
+#define TINYWOT_SUCCESS (1)
+
+/*!
+  \brief Check if a status code indicates an error.
+
+  \param[in] r An integer.
+  \return `true` or `false`.
+*/
+#define TINYWOT_IS_ERROR(r) ((r) <= 0)
+
+/*!
+  \brief Check if a status code indicates a success.
+
+  \param[in] r An integer.
+  \return `true` or `false`.
+*/
+#define TINYWOT_IS_SUCCESS(r) ((r) > 0)
 
 /*! \} */ /* defgroup tinywot_status */
 
@@ -95,7 +111,15 @@ extern "C" {
   producer nor consumer, so **only** this specific value is treated as an error
   by TinyWoT; others will be processed normally.
 */
-#define TINYWOT_TYPE_UNKNOWN 65535u
+#define TINYWOT_TYPE_UNKNOWN (65535u)
+
+/*!
+  \defgroup tinywot_scratchpad Scratchpad
+
+  A segment of memory with metadata.
+
+  \{
+*/
 
 /*!
   \brief A segment of memory with metadata.
@@ -145,33 +169,66 @@ struct tinywot_scratchpad {
   void *data;
 };
 
+/*!
+  \brief Convenient macro for creating an empty `tinywot_scratchpad`.
+  \sa `tinywot_scratchpad_new`
+*/
 #define TINYWOT_SCRATCHPAD_EMPTY \
-  (struct tinywot_scratchpad){0u, 0u, TINYWOT_TYPE_UNKNOWN, NULL}
+  (struct tinywot_scratchpad) { \
+    .size = 0u, .valid_size = 0u, .type_hint = TINYWOT_TYPE_UNKNOWN, \
+    .data = NULL \
+  }
 
+/*!
+  \brief Create a new empty `tinywot_scratchpad`.
+
+  This is equivalent to declaring a `tinywot_scratchpad` variable then
+  initializing it with `TINYWOT_SCRATCHPAD_EMPTY`. The use of either is purely
+  an aesthetic choice.
+
+  \sa `TINYWOT_SCRATCHPAD_EMPTY`
+*/
 struct tinywot_scratchpad tinywot_scratchpad_new(void);
-struct tinywot_scratchpad tinywot_scratchpad_new_with_empty_memory(
-  void *ptr,
-  size_t size
-);
-struct tinywot_scratchpad tinywot_scratchpad_new_with_type_hint(
-  void *ptr,
-  size_t size,
-  unsigned int type_hint
-);
+
+/*!
+  \brief Create a `tinywot_scratchpad` with a segment of unused memory.
+
+  \param[in] ptr A pointer pointing to a segment of memory.
+  \param[in] size The size of memory in bytes.
+  \return A `tinywot_scratchpad` containing the memory segment, with
+  `valid_size` being `0`, and `type_hint` being `TINYWOT_TYPE_UNKNOWN`.
+*/
+struct tinywot_scratchpad
+tinywot_scratchpad_new_with_empty_memory(void *ptr, size_t size);
+
+/*!
+  \brief Create a `tinywot_scratchpad` with a segment of used memory.
+
+  \param[in] ptr A pointer pointing to a segment of memory.
+  \param[in] size The size of memory in bytes.
+  \param[in] valid_size The size of memory in bytes with valid content.
+  \param[in] type_hint The type hint of content in the memory.
+  \return A `tinywot_scratchpad` containing the used memory segment.
+*/
 struct tinywot_scratchpad tinywot_scratchpad_new_with_used_memory(
-  void *ptr,
-  size_t size,
-  size_t valid_size,
-  unsigned int type_hint
+  void *ptr, size_t size, size_t valid_size, unsigned int type_hint
 );
+
+/*! \} */ /* defgroup tinywot_scratchpad */
+
+/*!
+  \defgroup tinywot_req_and_res Requests and Responses
+
+  \{
+*/
 
 /*!
   \brief "Semantic intention" of a request according to the Thing Description.
 
-  A full list of operation types can be found at [5.3.4.2 Form, the Web of
-  Things (WoT) Thing
-  Description](https://www.w3.org/TR/wot-thing-description11/#form)
-  specification. So far TinyWoT only supports a subset of them.
+  A full list of operation types can be found at [&sect; 5.3.4.2 Form, the Web
+  of Things (WoT) Thing Description](
+  https://www.w3.org/TR/wot-thing-description11/#form). So far TinyWoT only
+  supports a subset of them.
 
   `::TINYWOT_OPERATION_TYPE_UNKNOWN` is a special value (`0`) indicating an
   uninitialized operation type. TinyWoT treats this value as an error.
@@ -292,13 +349,7 @@ enum tinywot_operation_type {
 };
 
 /*!
-  \defgroup tinywot_req_and_res Requests and Responses
-
-  \{
-*/
-
-/*!
-  \brief Status codes used in `tinywot_response`s.
+  \brief Status codes used in a `tinywot_response`.
 */
 enum tinywot_response_status {
   /*!
@@ -447,7 +498,7 @@ int tinywot_thing_get_handler_function(
   \brief Perform an operation on a `tinywot_thing`.
 
   The operation is specified by `op`. The function looks for the corresponding
-  entry in `self`, invoke it if it exists, and then return its status code.
+  entry in `self`, invokes it if it exists, and then return its status code.
 
   \param[in] self A `tinywot_thing`.
   \param[in] name A name of the handler / affordance.
@@ -467,8 +518,8 @@ int tinywot_thing_do(
 /*!
   \brief Read a property from a `tinywot_thing`.
 
-  This is a wrapper of `tinywot_thing_do()` -- the operation type has been
-  implied by the function.
+  This is a wrapper of `tinywot_thing_do` -- the operation type has been implied
+  by the function.
 
   \param[in] self A `tinywot_thing`.
   \param[in] name A name of the handler / affordance.
@@ -484,8 +535,8 @@ int tinywot_thing_read_property(
 /*!
   \brief Write a property from a `tinywot_thing`.
 
-  This is a wrapper of `tinywot_thing_do()` -- the operation type has been
-  implied by the function.
+  This is a wrapper of `tinywot_thing_do` -- the operation type has been implied
+  by the function.
 
   \param[in] self A `tinywot_thing`.
   \param[in] name A name of the handler / affordance.
@@ -501,8 +552,8 @@ int tinywot_thing_write_property(
 /*!
   \brief Invoke an action from a `tinywot_thing`.
 
-  This is a wrapper of `tinywot_thing_do()` -- the operation type has been
-  implied by the function.
+  This is a wrapper of `tinywot_thing_do` -- the operation type has been implied
+  by the function.
 
   \param[in] self A `tinywot_thing`.
   \param[in] name A name of the handler / affordance.
@@ -516,16 +567,19 @@ int tinywot_thing_invoke_action(
 );
 
 /*!
-  \brief Produce a `tinywot_response` from a `tinywot_request` with a
+  \brief Transform a `tinywot_request` into a `tinywot_response` using a
   `tinywot_thing`.
 
-  \param[in] thing A thing.
+  This function finds a handler that supports the `request` in the supplied
+  `thing`. If none is found, `TINYWOT_ERROR_NOT_FOUND` is returned.
+
+  \param[in] self A `tinywot_thing`.
   \param[in] request A network request.
   \param[out] response A network response to be sent.
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 int tinywot_thing_process_request(
-  struct tinywot_thing const *thing,
+  struct tinywot_thing const *self,
   struct tinywot_request const *request,
   struct tinywot_response *response
 );
@@ -533,7 +587,13 @@ int tinywot_thing_process_request(
 /*! \} */ /* defgroup tinywot_thing */
 
 /*!
-  \defgroup tinywot_io Device-specific Input / Output Interfaces
+  \defgroup tinywot_io Platform-specific Input / Output Interfaces
+
+  The two interfaces (`read` and `write`) are essential for TinyWoT to work on
+  a higher level of abstraction. They should be simple functions that fills in
+  a given buffer and sends out a given buffer respectively. You must implement
+  them. See `tinywot_io_read_function_t` and `tinywot_io_write_function_t` for
+  the required function signatures.
 
   \{
 */
@@ -546,9 +606,8 @@ int tinywot_thing_process_request(
   \param[out] read THe number of bytes that have actually been read.
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
-typedef int tinywot_io_read_function_t(
-  unsigned char *ptr, size_t toread, size_t *read
-);
+typedef int
+tinywot_io_read_function_t(uint8_t *ptr, size_t toread, size_t *read);
 
 /*!
   \brief Signature of a function writing data to the network.
@@ -559,12 +618,14 @@ typedef int tinywot_io_read_function_t(
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 typedef int tinywot_io_write_function_t(
-  unsigned char const *ptr, size_t towrite, size_t *written
+  uint8_t const *ptr, size_t towrite, size_t *written
 );
 
 /*!
-  \brief A group of \ref tinywot_io_read_function_t and \ref
-  tinywot_io_write_function_t.
+  \brief A `tinywot_io_read_function_t` and a
+  `tinywot_io_write_function_t`.
+
+  This is for easier integration into another part of the system.
 */
 struct tinywot_io {
   /*! \brief A pointer to the function reading data from the network. */
@@ -576,44 +637,50 @@ struct tinywot_io {
 /*! \} */ /* defgroup tinywot_io */
 
 /*!
-  \defgroup tinywot_protocol Protocol Stack Implementation Interfaces
+  \defgroup tinywot_protocol Protocol Stack Interfaces
+
+  [&sect; 8.6 Protocol Stack Implementation, Web of Things (WoT) Architecture]
+  (https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#protocol-stack-implementation)
+  bridges the gap between the external world and a Web Thing by translating
+  protocol messages from and to a [&sect; 8.2 WoT Runtime, Web of Things (WoT)
+  Architecture](https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#wot-runtime).
+  TinyWoT currently doesn't ship a _Protocol Stack Implementation_, but all
+  implementations implementing these functions are considered valid in TinyWoT.
 
   \{
 */
 
 /*!
-  \brief Signature of a function producing a \ref tinywot_request using \ref
-  tinywot_io functions.
+  \brief Signature of a function producing a `tinywot_request` using
+  `tinywot_io` functions.
 
-  \param[out] request A valid pointer to a \ref tinywot_request storing the
+  \param[out] request A valid pointer to a `tinywot_request` storing the
   received network request.
-  \param[in] io A \ref tinywot_io containing a read function and a write
-  function.
+  \param[in] io A `tinywot_io` containing a read function and a write function.
   \return `TINYWOT_*` values. See \ref tinywot_status.
-  \sa tinywot_io
+  \sa \ref tinywot_io
 */
 typedef int tinywot_protocol_receive_function_t(
   struct tinywot_request *request, struct tinywot_io const *io
 );
 
 /*!
-  \brief Signature of a function producing a \ref tinywot_response using \ref
-  tinywot_io functions.
+  \brief Signature of a function producing a `tinywot_response` using
+  `tinywot_io` functions.
 
-  \param[out] response A valid pointer to a \ref tinywot_response storing the
+  \param[out] response A valid pointer to a `tinywot_response` storing the
   received network request.
-  \param[in] io A \ref tinywot_io containing a read function and a write
-  function.
+  \param[in] io A `tinywot_io` containing a read function and a write function.
   \return `TINYWOT_*` values. See \ref tinywot_status.
-  \sa tinywot_io
+  \sa \ref tinywot_io
 */
 typedef int tinywot_protocol_send_function_t(
   struct tinywot_response const *response, struct tinywot_io const *io
 );
 
 /*!
-  \brief A group of \ref tinywot_protocol_receive_function_t and \ref
-  tinywot_protocol_send_function_t.
+  \brief A `tinywot_protocol_receive_function_t` and a
+  `tinywot_protocol_send_function_t`.
 */
 struct tinywot_protocol {
   tinywot_protocol_receive_function_t *receive;
@@ -625,16 +692,39 @@ struct tinywot_protocol {
 /*!
   \defgroup tinywot_servient Servient
 
+  [&sect; 6.7 WoT System Components and Their Interconnectivity, Web of Things
+  (WoT)
+  Architecture](https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#sec-wot-servient-architecture-high-level)
+  defines a _Servient_ as _"a software stack that implements the WoT building
+  blocks."_ It's a higher level abstraction of a _Web Thing_ implementation in
+  software. To some extents, it can be seen as an _WoT App_.
+
   \{
 */
 
+/*!
+  \brief A software stack implementing a Web Thing.
+*/
 struct tinywot_servient {
-  struct tinywot_thing const thing;
-  struct tinywot_protocol const protocol;
-  struct tinywot_io const io;
+  /*! \brief _Behavior Implementation._ */
+  struct tinywot_thing const *thing;
+
+  /*! \brief _Protocol Stack Implementation._ */
+  struct tinywot_protocol const *protocol;
+
+  /*!
+    \brief Underlying functions for reading from and writing to the network.
+  */
+  struct tinywot_io const *io;
 };
 
-int tinywot_servient_run(struct tinywot_servient const *servicent);
+/*!
+  \brief Run the _Servient_.
+
+  \param[in] self A `tinywot_servient`.
+  \return `TINYWOT_*` values. See \ref tinywot_status.
+*/
+int tinywot_servient_run(struct tinywot_servient const *self);
 
 /*! \} */ /* defgroup tinywot_servient */
 
