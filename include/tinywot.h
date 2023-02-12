@@ -27,11 +27,6 @@ extern "C" {
 
   Status codes are signed integer (`int`) values. Errors are negative.
 
-  TinyWoT functions have their possible return values documented. TinyWoT also
-  checks status codes returned by [Behavior Implementation](
-  https://www.w3.org/TR/wot-architecture11/#behavior-implementation) functions
-  according to these definitions. Your application should use them too.
-
   \{
 */
 
@@ -92,34 +87,36 @@ extern "C" {
 /*! \} */ /* defgroup tinywot_status */
 
 /*!
-  \brief A value specifying an unknown content type / format.
-
-  This is used in e.g. `tinywot_scratchpad::type_hint` to indicate an
-  uninitialized or erroneous type of data. TinyWoT treats this value as an
-  exception (error) and will not send it out or accept it as an input. It is a
-  magic value chosen to be within the "Reserved for Experimental Use" allocation
-  in the [IANA CoAP Content-Formats
-  registry](https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats),
-  in the hope that it is not usually used by other developers. It is not `0`
-  because it has been allocated to `text/plain; charset=utf-8` in the registry.
-
-  \note In fact, according to
-  [RFC7252](https://www.rfc-editor.org/rfc/rfc7252.html), CoAP Content-Format
-  "... identifiers between 65000 and 65535 inclusive are reserved for
-  experiments. They are not meant for vendor-specific use of any kind and MUST
-  NOT be used in operational deployments." TinyWoT at its core is not a CoAP
-  producer nor consumer, so **only** this specific value is treated as an error
-  by TinyWoT; others will be processed normally.
-*/
-#define TINYWOT_TYPE_UNKNOWN (65535u)
-
-/*!
   \defgroup tinywot_scratchpad Scratchpad
 
   A segment of memory with metadata.
 
   \{
 */
+
+/*!
+  \brief A value specifying an unknown content type / format.
+
+  This is used in e.g. `tinywot_scratchpad::type_hint` to indicate an
+  uninitialized or erroneous type of data. TinyWoT treats this value as an
+  exception (error) and will not send it out or accept it as an input. It is a
+  magic value chosen to be within the "Reserved for Experimental Use"
+  allocation in the [IANA CoAP Content-Formats registry][cf-reg], in the hope
+  that it is not usually used by other developers. It is not `0` because it has
+  been allocated to `text/plain; charset=utf-8` in the registry.
+
+  \note In fact, according to [RFC7252], CoAP Content-Format "... identifiers
+  between 65000 and 65535 inclusive are reserved for experiments. They are not
+  meant for vendor-specific use of any kind and MUST NOT be used in operational
+  deployments." TinyWoT at its core is not a CoAP producer nor consumer, so
+  **only** this specific value is treated as an error by TinyWoT; others will
+  be processed normally.
+
+  [cf-reg]:
+  https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats
+  [RFC7252]: https://www.rfc-editor.org/rfc/rfc7252.html
+*/
+#define TINYWOT_TYPE_UNKNOWN (65535u)
 
 /*!
   \brief A segment of memory with metadata.
@@ -153,10 +150,12 @@ struct tinywot_scratchpad {
 
     The meaning of this field is undefined; different parties producing and
     consuming this structure may have different definitions on the meaningful
-    values of this field. You are recommended to use [CoAP
-    Content-Formats](https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats),
-    although you may use any unsigned integer here -- hence the name "hint", as
-    this is only an informative field.
+    values of this field. You are recommended to use [CoAP Content-Formats],
+    although you may use any unsigned integer here -- hence the name "hint",
+    as this is only an informative field.
+
+    [CoAP Content-Formats]:
+    https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats
   */
   unsigned int type_hint;
 
@@ -170,23 +169,10 @@ struct tinywot_scratchpad {
 };
 
 /*!
-  \brief Convenient macro for creating an empty `tinywot_scratchpad`.
-  \sa `tinywot_scratchpad_new`
-*/
-#define TINYWOT_SCRATCHPAD_EMPTY \
-  (struct tinywot_scratchpad) { \
-    .size = 0u, .valid_size = 0u, .type_hint = TINYWOT_TYPE_UNKNOWN, \
-    .data = NULL \
-  }
-
-/*!
   \brief Create a new empty `tinywot_scratchpad`.
 
-  This is equivalent to declaring a `tinywot_scratchpad` variable then
-  initializing it with `TINYWOT_SCRATCHPAD_EMPTY`. The use of either is purely
-  an aesthetic choice.
-
-  \sa `TINYWOT_SCRATCHPAD_EMPTY`
+  \return A `tinywot_scratchpad` pointing to `NULL` with `size` being `0` and
+  `type_hint` being `TINYWOT_TYPE_UNKNOWN`.
 */
 struct tinywot_scratchpad tinywot_scratchpad_new(void);
 
@@ -223,15 +209,25 @@ struct tinywot_scratchpad tinywot_scratchpad_new_with_used_memory(
 */
 
 /*!
-  \brief "Semantic intention" of a request according to the Thing Description.
+  \brief The maximum number of character allowed in a `tinywot_request::name`.
+*/
+#ifndef TINYWOT_REQUEST_PATH_MAX_LENGTH
+#define TINYWOT_REQUEST_PATH_MAX_LENGTH (32u)
+#endif
 
-  A full list of operation types can be found at [&sect; 5.3.4.2 Form, the Web
-  of Things (WoT) Thing Description](
-  https://www.w3.org/TR/wot-thing-description11/#form). So far TinyWoT only
+/*!
+  \brief "Semantic intention" of a request according to the Thing
+  Description.
+
+  A full list of operation types can be found at [&sect; 5.3.4.2 Form, the
+  Web of Things (WoT) Thing Description][td-5.3.4.2]. So far, TinyWoT only
   supports a subset of them.
 
   `::TINYWOT_OPERATION_TYPE_UNKNOWN` is a special value (`0`) indicating an
   uninitialized operation type. TinyWoT treats this value as an error.
+
+  [td-5.3.4.2]:
+  https://www.w3.org/TR/2020/REC-wot-thing-description-20200409/#form
 */
 enum tinywot_operation_type {
   /*!
@@ -264,8 +260,8 @@ enum tinywot_operation_type {
   TINYWOT_OPERATION_TYPE_UNOBSERVEPROPERTY,
 
   /*!
-    \brief "Identifies the invoke operation on Action Affordances to perform the
-    corresponding action."
+    \brief "Identifies the invoke operation on Action Affordances to perform
+    the corresponding action."
   */
   TINYWOT_OPERATION_TYPE_INVOKEACTION,
 
@@ -352,11 +348,7 @@ enum tinywot_operation_type {
   \brief Status codes used in a `tinywot_response`.
 */
 enum tinywot_response_status {
-  /*!
-    \brief An unknown or uninitialized response status.
-
-    TinyWoT treats this value as an error.
-  */
+  /*! \brief An unknown or uninitialized response status. */
   TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
 
   /*! \brief Operation successful. */
@@ -379,8 +371,8 @@ enum tinywot_response_status {
   \brief A network request.
 */
 struct tinywot_request {
-  /*! \brief Name of the Web of Thing affordance requested. */
-  char *name;
+  /*! \brief The path name of the target IRI in the request. */
+  char path[TINYWOT_REQUEST_PATH_MAX_LENGTH];
 
   /*! \brief The operation type requested. */
   enum tinywot_operation_type op;
@@ -427,17 +419,14 @@ typedef int tinywot_handler_function_t(
 */
 struct tinywot_handler {
   /*!
-    \brief The name of this handler.
-
-    TinyWoT matches the name of incoming form with this to decide which handler
-    function to invoke.
-  */
-  char const *name;
-
-  /*!
     \brief The allowed operation type of this handler.
   */
   enum tinywot_operation_type op;
+
+  /*!
+    \brief The path name of the IRI in `href` in the form.
+  */
+  char const *path;
 
   /*!
     \brief A function pointer to the actual handler implementation.
@@ -470,25 +459,22 @@ struct tinywot_thing {
 };
 
 /*!
-  \brief Get the handler function by specifying a name and a operation type.
-
-  A `tinywot_handler_function_t` needs to exist in the `tinywot_thing` with its
-  `tinywot_handler::name` and `tinywot_handler::op` be exactly the same as the
-  ones passed into this function.
+  \brief Get the handler function (closure) by specifying a path name and an
+  operation type.
 
   \param[in] self A `tinywot_thing`.
-  \param[in] name A name of the handler / affordance.
   \param[in] op An opeartion type allowed by the handler.
-  \param[out] func The found handler function. This is nullable -- set a `NULL`
-  here to only check if the handler exists or not without checking out the
-  pointer to the handler function.
-  \param[out] user_data The associated user data for `func`. This is nullable
+  \param[in] path The path name to use to search for a handler.
+  \param[out] func The found handler function. This is nullable -- set a
+  `NULL` here to only check if the handler exists or not without checking out
+  the pointer to the handler function. \param[out] user_data The associated
+  user data for `func`. This is nullable
   -- set a `NULL` here to not retrieve the pointer to `user_data`.
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 int tinywot_thing_get_handler_function(
   struct tinywot_thing const *self,
-  char const *name,
+  char const *path,
   enum tinywot_operation_type op,
   tinywot_handler_function_t **func,
   void **user_data
@@ -497,19 +483,16 @@ int tinywot_thing_get_handler_function(
 /*!
   \brief Perform an operation on a `tinywot_thing`.
 
-  The operation is specified by `op`. The function looks for the corresponding
-  entry in `self`, invokes it if it exists, and then return its status code.
-
   \param[in] self A `tinywot_thing`.
-  \param[in] name A name of the handler / affordance.
   \param[in] op An opeartion type allowed by the handler.
+  \param[in] path The path name to use to search for a handler.
   \param[in] input A buffer for the invoked handler to read data in.
   \param[out] output A buffer for the invoked handler to write data out.
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 int tinywot_thing_do(
   struct tinywot_thing const *self,
-  char const *name,
+  char const *path,
   enum tinywot_operation_type op,
   struct tinywot_scratchpad const *input,
   struct tinywot_scratchpad *output
@@ -518,51 +501,51 @@ int tinywot_thing_do(
 /*!
   \brief Read a property from a `tinywot_thing`.
 
-  This is a wrapper of `tinywot_thing_do` -- the operation type has been implied
-  by the function.
+  This is a wrapper of `tinywot_thing_do` -- the operation type has been
+  implied by the function.
 
   \param[in] self A `tinywot_thing`.
-  \param[in] name A name of the handler / affordance.
+  \param[in] path The path name to use to search for a handler.
   \param[out] output A buffer for the invoked handler to write data out.
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 int tinywot_thing_read_property(
   struct tinywot_thing const *self,
-  char const *name,
+  char const *path,
   struct tinywot_scratchpad *output
 );
 
 /*!
   \brief Write a property from a `tinywot_thing`.
 
-  This is a wrapper of `tinywot_thing_do` -- the operation type has been implied
-  by the function.
+  This is a wrapper of `tinywot_thing_do` -- the operation type has been
+  implied by the function.
 
   \param[in] self A `tinywot_thing`.
-  \param[in] name A name of the handler / affordance.
+  \param[in] path The path name to use to search for a handler.
   \param[in] input A buffer for the invoked handler to read data in.
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 int tinywot_thing_write_property(
   struct tinywot_thing const *self,
-  char const *name,
+  char const *path,
   struct tinywot_scratchpad const *input
 );
 
 /*!
   \brief Invoke an action from a `tinywot_thing`.
 
-  This is a wrapper of `tinywot_thing_do` -- the operation type has been implied
-  by the function.
+  This is a wrapper of `tinywot_thing_do` -- the operation type has been
+  implied by the function.
 
   \param[in] self A `tinywot_thing`.
-  \param[in] name A name of the handler / affordance.
+  \param[in] path The path name to use to search for a handler.
   \param[in] input A buffer for the invoked handler to read data in.
   \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 int tinywot_thing_invoke_action(
   struct tinywot_thing const *self,
-  char const *name,
+  char const *path,
   struct tinywot_scratchpad const *input
 );
 
@@ -589,11 +572,11 @@ int tinywot_thing_process_request(
 /*!
   \defgroup tinywot_io Platform-specific Input / Output Interfaces
 
-  The two interfaces (`read` and `write`) are essential for TinyWoT to work on
-  a higher level of abstraction. They should be simple functions that fills in
-  a given buffer and sends out a given buffer respectively. You must implement
-  them. See `tinywot_io_read_function_t` and `tinywot_io_write_function_t` for
-  the required function signatures.
+  The two interfaces (`read` and `write`) are essential for TinyWoT to work
+  on a higher level of abstraction. They should be simple functions that
+  fills in a given buffer and sends out a given buffer respectively. You must
+  implement them. See `tinywot_io_read_function_t` and
+  `tinywot_io_write_function_t` for the required function signatures.
 
   \{
 */
@@ -614,8 +597,8 @@ tinywot_io_read_function_t(uint8_t *ptr, size_t toread, size_t *read);
 
   \param[out] ptr A pointer pointing to a valid region of memory.
   \param[in] towrite The number of bytes to write from `ptr`.
-  \param[out] written THe number of bytes that have actually been written out.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \param[out] written THe number of bytes that have actually been written
+  out. \return `TINYWOT_*` values. See \ref tinywot_status.
 */
 typedef int tinywot_io_write_function_t(
   uint8_t const *ptr, size_t towrite, size_t *written
@@ -630,6 +613,7 @@ typedef int tinywot_io_write_function_t(
 struct tinywot_io {
   /*! \brief A pointer to the function reading data from the network. */
   tinywot_io_read_function_t *read;
+
   /*! \brief A pointer to the function writing data to the network. */
   tinywot_io_write_function_t *write;
 };
@@ -639,14 +623,15 @@ struct tinywot_io {
 /*!
   \defgroup tinywot_protocol Protocol Stack Interfaces
 
-  [&sect; 8.6 Protocol Stack Implementation, Web of Things (WoT) Architecture]
-  (https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#protocol-stack-implementation)
-  bridges the gap between the external world and a Web Thing by translating
-  protocol messages from and to a [&sect; 8.2 WoT Runtime, Web of Things (WoT)
-  Architecture](https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#wot-runtime).
-  TinyWoT currently doesn't ship a _Protocol Stack Implementation_, but all
-  implementations implementing these functions are considered valid in TinyWoT.
+  [&sect; 8.6 Protocol Stack Implementation, Web of Things (WoT)
+  Architecture][wota-8.6] bridges the gap between the external world and a
+  Web Thing by translating protocol messages from and to a [&sect; 8.2 WoT
+  Runtime, Web of Things (WoT) Architecture][wota-8.2].
 
+  [wota-8.6]:
+  https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#protocol-stack-implementation
+  [wota-8.2]:
+  https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#wot-runtime
   \{
 */
 
@@ -656,9 +641,9 @@ struct tinywot_io {
 
   \param[out] request A valid pointer to a `tinywot_request` storing the
   received network request.
-  \param[in] io A `tinywot_io` containing a read function and a write function.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
-  \sa \ref tinywot_io
+  \param[in] io A `tinywot_io` containing a read function and a write
+  function. \return `TINYWOT_*` values. See \ref tinywot_status. \sa \ref
+  tinywot_io
 */
 typedef int tinywot_protocol_receive_function_t(
   struct tinywot_request *request, struct tinywot_io const *io
@@ -670,9 +655,9 @@ typedef int tinywot_protocol_receive_function_t(
 
   \param[out] response A valid pointer to a `tinywot_response` storing the
   received network request.
-  \param[in] io A `tinywot_io` containing a read function and a write function.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
-  \sa \ref tinywot_io
+  \param[in] io A `tinywot_io` containing a read function and a write
+  function. \return `TINYWOT_*` values. See \ref tinywot_status. \sa \ref
+  tinywot_io
 */
 typedef int tinywot_protocol_send_function_t(
   struct tinywot_response const *response, struct tinywot_io const *io
@@ -683,7 +668,10 @@ typedef int tinywot_protocol_send_function_t(
   `tinywot_protocol_send_function_t`.
 */
 struct tinywot_protocol {
+  /*! \brief A pointer pointing to the receive. */
   tinywot_protocol_receive_function_t *receive;
+
+  /*! \brief A pointer pointing to the send. */
   tinywot_protocol_send_function_t *send;
 };
 
@@ -692,12 +680,14 @@ struct tinywot_protocol {
 /*!
   \defgroup tinywot_servient Servient
 
-  [&sect; 6.7 WoT System Components and Their Interconnectivity, Web of Things
-  (WoT)
-  Architecture](https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#sec-wot-servient-architecture-high-level)
-  defines a _Servient_ as _"a software stack that implements the WoT building
-  blocks."_ It's a higher level abstraction of a _Web Thing_ implementation in
-  software. To some extents, it can be seen as an _WoT App_.
+  [&sect; 6.7 WoT System Components and Their Interconnectivity, Web of
+  Things (WoT) Architecture][wota-6.7] defines a _Servient_ as "a software
+  stack that implements the WoT building blocks." It's a higher level
+  abstraction of a _Web Thing_ implementation in software. To some extents,
+  it can be seen as an _WoT App_.
+
+  [wota-6.7]:
+  https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#sec-wot-servient-architecture-high-level
 
   \{
 */
@@ -706,15 +696,13 @@ struct tinywot_protocol {
   \brief A software stack implementing a Web Thing.
 */
 struct tinywot_servient {
-  /*! \brief _Behavior Implementation._ */
+  /*! \brief \ref tinywot_thing */
   struct tinywot_thing const *thing;
 
-  /*! \brief _Protocol Stack Implementation._ */
+  /*! \brief \ref tinywot_protocol */
   struct tinywot_protocol const *protocol;
 
-  /*!
-    \brief Underlying functions for reading from and writing to the network.
-  */
+  /*! \brief \ref tinywot_io */
   struct tinywot_io const *io;
 };
 
