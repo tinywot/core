@@ -13,39 +13,6 @@
 
 #include <tinywot.h>
 
-struct tinywot_scratchpad tinywot_scratchpad_new(void)
-{
-  return (struct tinywot_scratchpad) {
-    .size = 0u,
-    .valid_size = 0u,
-    .type_hint = TINYWOT_TYPE_UNKNOWN,
-    .data = NULL,
-  };
-}
-
-struct tinywot_scratchpad
-tinywot_scratchpad_new_with_empty_memory(void *ptr, size_t size)
-{
-  return (struct tinywot_scratchpad) {
-    .size = size,
-    .valid_size = 0u,
-    .type_hint = TINYWOT_TYPE_UNKNOWN,
-    .data = ptr,
-  };
-}
-
-struct tinywot_scratchpad tinywot_scratchpad_new_with_used_memory(
-  void *ptr, size_t size, size_t valid_size, unsigned int type_hint
-)
-{
-  return (struct tinywot_scratchpad) {
-    .size = size,
-    .valid_size = valid_size,
-    .type_hint = type_hint,
-    .data = ptr,
-  };
-}
-
 int tinywot_thing_get_handler_function(
   struct tinywot_thing const *self,
   char const *path,
@@ -101,7 +68,7 @@ int tinywot_thing_do(
   status
     = tinywot_thing_get_handler_function(self, path, op, &func, &user_data);
 
-  if (status != TINYWOT_SUCCESS) {
+  if (tinywot_is_error(status)) {
     return status;
   }
 
@@ -189,10 +156,26 @@ int tinywot_thing_process_request(
   return status;
 }
 
-int tinywot_servient_run(struct tinywot_servient const *self)
+int tinywot_servient_process(struct tinywot_servient const *self)
 {
-  (void)self;
+  struct tinywot_request request = {0};
+  struct tinywot_response response = {0};
+  int status = 0;
 
-  /* TODO: Not implemented yet! */
-  return TINYWOT_ERROR_NOT_IMPLEMENTED;
+  status = self->protocol->receive(&request, self->io);
+  if (tinywot_is_error(status)) {
+    return status;
+  }
+
+  status = tinywot_thing_process_request(self->thing, &request, &response);
+  if (tinywot_is_error(status)) {
+    return status;
+  }
+
+  status = self->protocol->send(&response, self->io);
+  if (tinywot_is_error(status)) {
+    return status;
+  }
+
+  return TINYWOT_SUCCESS;
 }

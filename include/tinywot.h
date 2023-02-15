@@ -11,6 +11,7 @@
 #ifndef TINYWOT_H
 #define TINYWOT_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -74,7 +75,7 @@ extern "C" {
   \param[in] r An integer.
   \return `true` or `false`.
 */
-#define TINYWOT_IS_ERROR(r) ((r) <= 0)
+static inline bool tinywot_is_error(int r) { return r <= 0; }
 
 /*!
   \brief Check if a status code indicates a success.
@@ -82,7 +83,7 @@ extern "C" {
   \param[in] r An integer.
   \return `true` or `false`.
 */
-#define TINYWOT_IS_SUCCESS(r) ((r) > 0)
+static inline bool tinywot_is_success(int r) { return r > 0; }
 
 /*! \} */ /* defgroup tinywot_status */
 
@@ -167,38 +168,6 @@ struct tinywot_scratchpad {
   */
   void *data;
 };
-
-/*!
-  \brief Create a new empty `tinywot_scratchpad`.
-
-  \return A `tinywot_scratchpad` pointing to `NULL` with `size` being `0` and
-  `type_hint` being `TINYWOT_TYPE_UNKNOWN`.
-*/
-struct tinywot_scratchpad tinywot_scratchpad_new(void);
-
-/*!
-  \brief Create a `tinywot_scratchpad` with a segment of unused memory.
-
-  \param[in] ptr A pointer pointing to a segment of memory.
-  \param[in] size The size of memory in bytes.
-  \return A `tinywot_scratchpad` containing the memory segment, with
-  `valid_size` being `0`, and `type_hint` being `TINYWOT_TYPE_UNKNOWN`.
-*/
-struct tinywot_scratchpad
-tinywot_scratchpad_new_with_empty_memory(void *ptr, size_t size);
-
-/*!
-  \brief Create a `tinywot_scratchpad` with a segment of used memory.
-
-  \param[in] ptr A pointer pointing to a segment of memory.
-  \param[in] size The size of memory in bytes.
-  \param[in] valid_size The size of memory in bytes with valid content.
-  \param[in] type_hint The type hint of content in the memory.
-  \return A `tinywot_scratchpad` containing the used memory segment.
-*/
-struct tinywot_scratchpad tinywot_scratchpad_new_with_used_memory(
-  void *ptr, size_t size, size_t valid_size, unsigned int type_hint
-);
 
 /*! \} */ /* defgroup tinywot_scratchpad */
 
@@ -406,7 +375,7 @@ struct tinywot_response {
 
   \param[in] input Data in request. The handler should not modify it.
   \param[out] output Data to send out.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \return \ref tinywot_status
 */
 typedef int tinywot_handler_function_t(
   struct tinywot_scratchpad const *input,
@@ -470,7 +439,7 @@ struct tinywot_thing {
   the pointer to the handler function. \param[out] user_data The associated
   user data for `func`. This is nullable
   -- set a `NULL` here to not retrieve the pointer to `user_data`.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \return \ref tinywot_status
 */
 int tinywot_thing_get_handler_function(
   struct tinywot_thing const *self,
@@ -488,7 +457,7 @@ int tinywot_thing_get_handler_function(
   \param[in] path The path name to use to search for a handler.
   \param[in] input A buffer for the invoked handler to read data in.
   \param[out] output A buffer for the invoked handler to write data out.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \return \ref tinywot_status
 */
 int tinywot_thing_do(
   struct tinywot_thing const *self,
@@ -507,7 +476,7 @@ int tinywot_thing_do(
   \param[in] self A `tinywot_thing`.
   \param[in] path The path name to use to search for a handler.
   \param[out] output A buffer for the invoked handler to write data out.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \return \ref tinywot_status
 */
 int tinywot_thing_read_property(
   struct tinywot_thing const *self,
@@ -524,7 +493,7 @@ int tinywot_thing_read_property(
   \param[in] self A `tinywot_thing`.
   \param[in] path The path name to use to search for a handler.
   \param[in] input A buffer for the invoked handler to read data in.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \return \ref tinywot_status
 */
 int tinywot_thing_write_property(
   struct tinywot_thing const *self,
@@ -541,7 +510,7 @@ int tinywot_thing_write_property(
   \param[in] self A `tinywot_thing`.
   \param[in] path The path name to use to search for a handler.
   \param[in] input A buffer for the invoked handler to read data in.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \return \ref tinywot_status
 */
 int tinywot_thing_invoke_action(
   struct tinywot_thing const *self,
@@ -559,7 +528,7 @@ int tinywot_thing_invoke_action(
   \param[in] self A `tinywot_thing`.
   \param[in] request A network request.
   \param[out] response A network response to be sent.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \return \ref tinywot_status
 */
 int tinywot_thing_process_request(
   struct tinywot_thing const *self,
@@ -587,7 +556,7 @@ int tinywot_thing_process_request(
   \param[out] ptr A pointer pointing to a valid region of memory.
   \param[in] toread The number of bytes to read and place to `ptr`.
   \param[out] read THe number of bytes that have actually been read.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \return \ref tinywot_status
 */
 typedef int
 tinywot_io_read_function_t(uint8_t *ptr, size_t toread, size_t *read);
@@ -597,18 +566,15 @@ tinywot_io_read_function_t(uint8_t *ptr, size_t toread, size_t *read);
 
   \param[out] ptr A pointer pointing to a valid region of memory.
   \param[in] towrite The number of bytes to write from `ptr`.
-  \param[out] written THe number of bytes that have actually been written
-  out. \return `TINYWOT_*` values. See \ref tinywot_status.
+  \param[out] written THe number of bytes that have actually been written out.
+  \return \ref tinywot_status
 */
 typedef int tinywot_io_write_function_t(
   uint8_t const *ptr, size_t towrite, size_t *written
 );
 
 /*!
-  \brief A `tinywot_io_read_function_t` and a
-  `tinywot_io_write_function_t`.
-
-  This is for easier integration into another part of the system.
+  \brief A read function and a write function.
 */
 struct tinywot_io {
   /*! \brief A pointer to the function reading data from the network. */
@@ -637,13 +603,13 @@ struct tinywot_io {
 
 /*!
   \brief Signature of a function producing a `tinywot_request` using
-  `tinywot_io` functions.
+  \ref tinywot_io functions.
 
   \param[out] request A valid pointer to a `tinywot_request` storing the
   received network request.
-  \param[in] io A `tinywot_io` containing a read function and a write
-  function. \return `TINYWOT_*` values. See \ref tinywot_status. \sa \ref
-  tinywot_io
+  \param[in] io A `tinywot_io` containing a read function and a write function.
+  \return \ref tinywot_status
+  \sa \ref tinywot_io
 */
 typedef int tinywot_protocol_receive_function_t(
   struct tinywot_request *request, struct tinywot_io const *io
@@ -651,21 +617,20 @@ typedef int tinywot_protocol_receive_function_t(
 
 /*!
   \brief Signature of a function producing a `tinywot_response` using
-  `tinywot_io` functions.
+  \ref tinywot_io functions.
 
   \param[out] response A valid pointer to a `tinywot_response` storing the
-  received network request.
-  \param[in] io A `tinywot_io` containing a read function and a write
-  function. \return `TINYWOT_*` values. See \ref tinywot_status. \sa \ref
-  tinywot_io
+  network response to be sent.
+  \param[in] io A `tinywot_io` containing a read function and a write function.
+  \return \ref tinywot_status
+  \sa \ref tinywot_io
 */
 typedef int tinywot_protocol_send_function_t(
   struct tinywot_response const *response, struct tinywot_io const *io
 );
 
 /*!
-  \brief A `tinywot_protocol_receive_function_t` and a
-  `tinywot_protocol_send_function_t`.
+  \brief A receive function and a send function.
 */
 struct tinywot_protocol {
   /*! \brief A pointer pointing to the receive. */
@@ -707,12 +672,12 @@ struct tinywot_servient {
 };
 
 /*!
-  \brief Run the _Servient_.
+  \brief Run the service routine of Servient once.
 
   \param[in] self A `tinywot_servient`.
-  \return `TINYWOT_*` values. See \ref tinywot_status.
+  \return \ref tinywot_status
 */
-int tinywot_servient_run(struct tinywot_servient const *self);
+int tinywot_servient_process(struct tinywot_servient const *self);
 
 /*! \} */ /* defgroup tinywot_servient */
 
