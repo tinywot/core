@@ -5,17 +5,9 @@
 
 # TinyWoT
 
-TinyWoT is a library for implementing a [W3C Web of Things (WoT)](https://www.w3.org/WoT/) compliant _[Web Thing](https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#sec-web-thing)_ on an embedded device.
+TinyWoT is a [W3C Web of Things (WoT)](https://www.w3.org/WoT/) framework targetting resource-constrained embedded devices.
 
-It contains:
-
-- A set of _Native WoT APIs ([WoTA] &sect; 8.8.1)_ in C.
-- A _WoT Runtime ([WoTA] &sect; 8.2)_.
-- A high-level _Servient framework ([WoTA] &sect; 6.7)_.
-
-They're all work-in-progress currently.
-
-[WoTA]: https://www.w3.org/TR/2020/REC-wot-architecture-20200409/
+It is still a work-in-progress so far.
 
 ## License
 

@@ -11,9 +11,7 @@
 #ifndef TINYWOT_H
 #define TINYWOT_H
 
-#include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,36 +20,39 @@ extern "C" {
 /*!
   \defgroup tinywot_status TinyWoT Status Codes
 
-  These macros define possible status codes used across the library, and
-  returned by library functions. Thing implementations should also use them to
-  indicate their status.
+  These macros define possible status codes used across the library. They are
+  signed integer (`int`) values, with error codes being equal or less than `0`.
 
-  Status codes are signed integer (`int`) values. Errors are negative.
+  User-implemented functions that are called by TinyWoT should also use them.
 
   \{
 */
 
 /*!
+  \brief There is insufficient memory to complete an action.
+*/
+#define TINYWOT_ERROR_NOT_ENOUGH_MEMORY (-5)
+
+/*!
   \brief A requested operation is not allowed.
 
-  For example, if a given WoT affordance name exists, but cannot accept the
-  given operation type, then this code will be returned.
+  This can happen when a path is registered to one or a few handlers accepting
+  operations but the requested one.
 */
 #define TINYWOT_ERROR_NOT_ALLOWED (-4)
 
 /*!
   \brief A function is not implemented.
 
-  For example, if a given WoT affordance name is associated without a valid
-  handler function (set to `NULL`), then this code will be returned.
+  This can happen when a path is registered to a `NULL` handler.
 */
 #define TINYWOT_ERROR_NOT_IMPLEMENTED (-3)
 
 /*!
   \brief Something is missing.
 
-  For example, if a given WoT affordance name does not exist in a thing, then
-  this code will be returned.
+  This can happen when a requested path and operation type cannot match any
+  handler registered in a `tinywot_thing` instance.
 */
 #define TINYWOT_ERROR_NOT_FOUND (-2)
 
@@ -60,7 +61,7 @@ extern "C" {
 
   This is used to indicate an error without specifying a reason.
 */
-#define TINYWOT_ERROR_GENERAL_ERROR (0)
+#define TINYWOT_ERROR_GENERAL (0)
 
 /*!
   \brief Success.
@@ -73,17 +74,17 @@ extern "C" {
   \brief Check if a status code indicates an error.
 
   \param[in] r An integer.
-  \return `true` or `false`.
+  \return `1` if `r` is an error, `0` if it is not.
 */
-static inline bool tinywot_is_error(int r) { return r <= 0; }
+static inline int tinywot_is_error(int r) { return r <= 0; }
 
 /*!
   \brief Check if a status code indicates a success.
 
   \param[in] r An integer.
-  \return `true` or `false`.
+  \return `1` if `r` is a success, `0` if it is not.
 */
-static inline bool tinywot_is_success(int r) { return r > 0; }
+static inline int tinywot_is_success(int r) { return r > 0; }
 
 /*! \} */ /* defgroup tinywot_status */
 
@@ -110,50 +111,40 @@ static inline bool tinywot_is_success(int r) { return r > 0; }
   between 65000 and 65535 inclusive are reserved for experiments. They are not
   meant for vendor-specific use of any kind and MUST NOT be used in operational
   deployments." TinyWoT at its core is not a CoAP producer nor consumer, so
-  **only** this specific value is treated as an error by TinyWoT; others will
+  \b only this specific value is treated as an error by TinyWoT; others will
   be processed normally.
 
   [cf-reg]:
   https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats
   [RFC7252]: https://www.rfc-editor.org/rfc/rfc7252.html
 */
-#define TINYWOT_TYPE_UNKNOWN (65535u)
+#define TINYWOT_CONTENT_TYPE_UNKNOWN (65535u)
 
 /*!
   \brief A segment of memory with metadata.
 
-  This data structure is used across the library to reduce the clutter of
-  passing multiple if not all of them as function parameters.
+  These attributes with the memory are frequently used together across the
+  library.
 */
 struct tinywot_scratchpad {
   /*!
-    \brief The full size of memory pointed by `::data`.
+    \brief A flag indicating whether `::data` is writable or not.
 
-    The unit of this field is undefined. Depending on `::type_hint` the
-    application is free to choose a suitable unit, but byte is recommended.
+    This helps preventing accidental write to a constant, provided that this
+    field is checked before attempting to write into `::data`.
   */
-  size_t size;
-
-  /*!
-    \brief The actual meaningful size of content pointed by `::data`.
-
-    For example, if `::data` points to a non-NUL-terminated string `"hello"`,
-    then this should be 5.
-
-    The unit of this field is undefined. Depending on `::type_hint` the
-    application is free to choose a suitable unit, but byte is recommended.
-  */
-  size_t valid_size;
+  unsigned int read_write;
 
   /*!
     \brief An arbitrary unsigned integer hinting the type of data pointed by
     `data`.
 
-    The meaning of this field is undefined; different parties producing and
-    consuming this structure may have different definitions on the meaningful
-    values of this field. You are recommended to use [CoAP Content-Formats],
-    although you may use any unsigned integer here -- hence the name "hint",
-    as this is only an informative field.
+    This field uses a number to represent a media type, but the exact meaning of
+    this field is undefined. Different parties producing and consuming this
+    structure may have different definitions on the meaningful values of this
+    field. It is recommended to use [CoAP Content-Formats], although any
+    unsigned integer can be used here -- hence the name "hint", as this is only
+    an informative field.
 
     [CoAP Content-Formats]:
     https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats
@@ -161,13 +152,82 @@ struct tinywot_scratchpad {
   unsigned int type_hint;
 
   /*!
+    \brief The full size of memory pointed by `::data`, in bytes.
+  */
+  size_t size_byte;
+
+  /*!
+    \brief The actual meaningful size of content pointed by `::data`, in bytes.
+
+    For example, if `::data` points to a string `"hello"`, then this should
+    be 6 (including the terminal `NUL` character).
+  */
+  size_t valid_byte;
+
+  /*!
     \brief A pointer to a segment of memory described by the other fields in
     this structure.
-    \note This pointer is nullable, provided that ::size or ::valid_size is
-    `0`.
+
+    If `::size_byte` is `0`, then this field can be `NULL`.
   */
-  void *data;
+  unsigned char *data;
+
+  /*!
+    \brief Load data to the memory pointed by `::data`.
+
+    This provides a way for data producers to lazily supply data to a consumer.
+    Setting this function pointer to non-`NULL` hints the use of such mechanism.
+    The implementation of this function should load data to `::data` according
+    to `cursor`, the meaning of which is opaque to the caller, but `0` should be
+    the starting point, and should be set by the caller before the 1st call.
+    After updating `::data`, `cursor` should be updated to indicate the next
+    available chunk of data.
+
+    \param[inout] self This scratchpad (although any one works).
+    \param[inout] cursor An indicator of the starting point of memory that will
+    be loaded and pointed by `::data`.
+    \return \ref tinywot_status
+  */
+  int (*update)(struct tinywot_scratchpad *self, size_t *cursor);
 };
+
+/*!
+  \brief Initialize a scratchpad.
+
+  This clears the memory pointed by `self` and sets
+  `tinywot_scratchpad::type_hint` to `TINYWOT_CONTENT_TYPE_UNKNOWN`.
+
+  \param[inout] self A scratchpad.
+*/
+void tinywot_scratchpad_initialize(struct tinywot_scratchpad *self);
+
+/*!
+  \brief Split a scratchpad into two halves.
+
+  `left` is also the scratchpad to be split. `right` needs to point to an empty
+  `tinywot_scratchpad` and cannot be `NULL`, as this function will not allocate
+  memory for it.
+
+  `left` will have its full size reduced by `to_split_byte` bytes.
+  `to_split_byte` bytes of memory is then taken from the end of the `left`
+  scratchpad, forming the `right` scratchpad. Metadata is written back to their
+  corresponding structure fields.
+
+  If `left` does not have enough available room for a split, then the function
+  will fail with `TINYWOT_ERROR_NOT_ENOUGH_MEMORY`.
+
+  \param[inout] left The scratchpad to be split, as well as the left-hand-side
+  scratchpad to create after the split.
+  \param[inout] right The right-hand-side scratchpad to create after the split.
+  \param[inout] to_split_byte How much memory should be sliced out of `left`, in
+  bytes.
+  \return \ref tinywot_status
+*/
+int tinywot_scratchpad_split(
+  struct tinywot_scratchpad *restrict left,
+  struct tinywot_scratchpad *restrict right,
+  size_t to_split_byte
+);
 
 /*! \} */ /* defgroup tinywot_scratchpad */
 
@@ -176,13 +236,6 @@ struct tinywot_scratchpad {
 
   \{
 */
-
-/*!
-  \brief The maximum number of character allowed in a `tinywot_request::name`.
-*/
-#ifndef TINYWOT_REQUEST_PATH_MAX_LENGTH
-#define TINYWOT_REQUEST_PATH_MAX_LENGTH (32u)
-#endif
 
 /*!
   \brief "Semantic intention" of a request according to the Thing
@@ -315,6 +368,9 @@ enum tinywot_operation_type {
 
 /*!
   \brief Status codes used in a `tinywot_response`.
+
+  `::TINYWOT_RESPONSE_STATUS_UNKNOWN` is a special value (`0`) indicating an
+  uninitialized response status. TinyWoT treats this value as an error.
 */
 enum tinywot_response_status {
   /*! \brief An unknown or uninitialized response status. */
@@ -323,7 +379,7 @@ enum tinywot_response_status {
   /*! \brief Operation successful. */
   TINYWOT_RESPONSE_STATUS_OK,
 
-  /*! \brief Operation failed. */
+  /*! \brief Operation failed (usually due to a Thing-side problem). */
   TINYWOT_RESPONSE_STATUS_ERROR,
 
   /*! \brief Something is missing. */
@@ -337,11 +393,18 @@ enum tinywot_response_status {
 };
 
 /*!
-  \brief A network request.
+  \brief A received request.
 */
 struct tinywot_request {
-  /*! \brief The path name of the target IRI in the request. */
-  char path[TINYWOT_REQUEST_PATH_MAX_LENGTH];
+  /*!
+    \brief The path name of the target IRI in the request.
+
+    The use of a scratchpad here is because it could be sliced from `::content`
+    to use a single space provided by the user.
+
+    \sa `tinywot_scratchpad_split()`
+  */
+  struct tinywot_scratchpad path;
 
   /*! \brief The operation type requested. */
   enum tinywot_operation_type op;
@@ -351,7 +414,7 @@ struct tinywot_request {
 };
 
 /*!
-  \brief A network response.
+  \brief A response to be sent.
 */
 struct tinywot_response {
   /*! \brief A status code for the response. */
@@ -373,24 +436,24 @@ struct tinywot_response {
   \brief Signature of a handler function implementing the behavior of an
   affordance.
 
-  \param[in] input Data in request. The handler should not modify it.
-  \param[out] output Data to send out.
+  \param[inout] inout A memory buffer carrying input arguments and output
+  values.
+  \param[inout] user_data The context data registered in `tinywot_form`.
   \return \ref tinywot_status
 */
-typedef int tinywot_handler_function_t(
-  struct tinywot_scratchpad const *input,
-  struct tinywot_scratchpad *output,
-  void *user_data
-);
+typedef int
+tinywot_form_handler_t(struct tinywot_scratchpad *inout, void *user_data);
 
 /*!
-  \brief A structure containing a handler function and its metadata.
+  \brief An operation endpoint.
 */
-struct tinywot_handler {
+struct tinywot_form {
   /*!
-    \brief The allowed operation type of this handler.
+    \brief The name of affordance that this form is attached to.
+
+    For a top-level form, this field should be left empty (`NULL`).
   */
-  enum tinywot_operation_type op;
+  char const *name;
 
   /*!
     \brief The path name of the IRI in `href` in the form.
@@ -398,136 +461,229 @@ struct tinywot_handler {
   char const *path;
 
   /*!
-    \brief A function pointer to the actual handler implementation.
+    \brief The allowed operation type on this form.
   */
-  tinywot_handler_function_t *func;
+  enum tinywot_operation_type op;
 
   /*!
-    \brief Arbitrary data to pass when `::func` is called.
+    \brief A function pointer to the actual implementation of the form.
+  */
+  tinywot_form_handler_t *handler;
+
+  /*!
+    \brief Arbitrary data to pass to `::handler` when it is called.
   */
   void *user_data;
 };
 
 /*!
-  \brief A thing.
-
-  It contains behavior implementations, which are `tinywot_handler`s.
+  \brief A representation of Thing.
 */
 struct tinywot_thing {
   /*!
-    \brief Size of `::handlers`.
+    \brief A flag indicating whether `::forms` is writable or not.
 
-    This should be the number of `tinywot_handler`s in `::handlers`.
+    This helps preventing accidental write to a constant, provided that this
+    field is checked before attempting to write into `::forms`.
   */
-  size_t handlers_size;
+  unsigned int read_write;
 
-  /*!
-    \brief A list of `tinywot_handler`s.
-  */
-  struct tinywot_handler *handlers;
+  /*! \brief The number of registered forms in `::forms`. */
+  size_t forms_count_n;
+
+  /*! \brief The maximum number of forms in `::forms`. */
+  size_t forms_max_n;
+
+  /*! \brief A list of forms describing behaviors of this Thing. */
+  struct tinywot_form *forms;
 };
 
 /*!
-  \brief Get the handler function (closure) by specifying a path name and an
-  operation type.
+  \brief Initialize a Thing with an existing array of forms.
 
-  \param[in] self A `tinywot_thing`.
-  \param[in] op An opeartion type allowed by the handler.
-  \param[in] path The path name to use to search for a handler.
-  \param[out] func The found handler function. This is nullable -- set a
-  `NULL` here to only check if the handler exists or not without checking out
-  the pointer to the handler function. \param[out] user_data The associated
-  user data for `func`. This is nullable
-  -- set a `NULL` here to not retrieve the pointer to `user_data`.
-  \return \ref tinywot_status
+  This will also mark the Thing as read-only, as most often the supplied list
+  is a constant.
+
+  \param[inout] self A Thing.
+  \param[in] forms An array of `tinywot_form`s.
+  \param[in] forms_size_n How many `tinywot_forms` are in `forms`.
 */
-int tinywot_thing_get_handler_function(
+void tinywot_thing_initialize_with_forms(
+  struct tinywot_thing *self,
+  struct tinywot_form const *forms,
+  size_t forms_size_n
+);
+
+/*!
+  \brief Initialize a Thing with a memory space.
+
+  This makes the Thing dynamic. `tinywot_thing::forms_max_n` is calculated from
+  `memory_size_byte`. Handlers are set with `tinywot_thing_set_handler()`.
+
+  \param[inout] self A Thing.
+  \param[in] memory A pointer to a memory space.
+  \param[in] memory_size_byte The allocated size of `memory`.
+*/
+void tinywot_thing_initialize_with_memory(
+  struct tinywot_thing *self, void *memory, size_t memory_size_byte
+);
+
+/*!
+  \brief Find and get a handler from a Thing.
+
+  Depending on the supplied arguments:
+
+  - If both `name` and `path` are non-`NULL`, then the first closure with `name`
+    on `path` is returned.
+  - If `name` is non-`NULL`, `path` is `NULL`, then the first closure with
+    `name` is returned.
+  - If `name` is `NULL`, `path` is non-`NULL`, then the first closure on `path`
+    is returned.
+  - If both `name` and `path` are `NULL`, then the first closure allowing `op`
+    is returned.
+
+  In any case, `op` is checked for equality and does not prevent
+  `::TINYWOT_OPERATION_TYPE_UNKNOWN` from being returned.
+
+  \param[in] self A Thing.
+  \param[in] name The name of affordance. This can be found on a corresponding
+  Thing Description.
+  \param[in] path The path name in IRI described on a corresponding Thing
+  Description (in `href`).
+  \param[in] op The operation type allowed on the handler we are looking for.
+  \param[out] handler If found, the pointer to the handler function is returned
+  here. Ignore this by setting it to `NULL`.
+  \param[out] user_data The arbitrary data associated to `handler`, usually
+  used to form a closure. Ignore this by setting it to `NULL`.
+  \return \ref tinywot_status
+  \sa `tinywot_thing_get_handler_by_name()`,
+  `tinywot_thing_get_handler_by_path()`
+*/
+int tinywot_thing_get_handler(
   struct tinywot_thing const *self,
+  char const *name,
   char const *path,
   enum tinywot_operation_type op,
-  tinywot_handler_function_t **func,
+  tinywot_form_handler_t **handler,
   void **user_data
 );
 
 /*!
-  \brief Perform an operation on a `tinywot_thing`.
+  \brief Find and get a handler from a Thing according to the affordance name.
 
-  \param[in] self A `tinywot_thing`.
-  \param[in] op An opeartion type allowed by the handler.
-  \param[in] path The path name to use to search for a handler.
-  \param[in] input A buffer for the invoked handler to read data in.
-  \param[out] output A buffer for the invoked handler to write data out.
+  This is a convenience wrapper on `tinywot_thing_get_handler()` without the
+  `path` parameter.
+
+  \param[in] self A Thing.
+  \param[in] name The name of affordance. This can be found on a corresponding
+  Thing Description.
+  \param[in] op The operation type allowed on the handler we are looking for.
+  \param[out] handler If found, the pointer to the handler function is returned
+  here. Ignore this by setting it to `NULL`.
+  \param[out] user_data The arbitrary data associated to `handler`, usually
+  used to form a closure. Ignore this by setting it to `NULL`.
   \return \ref tinywot_status
+  \sa `tinywot_thing_get_handler()`, `tinywot_thing_get_handler_by_path()`
 */
-int tinywot_thing_do(
+static inline int tinywot_thing_get_handler_by_name(
+  struct tinywot_thing const *self,
+  char const *name,
+  enum tinywot_operation_type op,
+  tinywot_form_handler_t **handler,
+  void **user_data
+)
+{
+  return tinywot_thing_get_handler(self, name, NULL, op, handler, user_data);
+}
+
+/*!
+  \brief Find and get a handler from a Thing according to the affordance name.
+
+  This is a convenience wrapper on `tinywot_thing_get_handler()` without the
+  `name` parameter.
+
+  \param[in] self A Thing.
+  \param[in] path The path name in IRI described on a corresponding Thing
+  Description (in `href`).
+  \param[in] op The operation type allowed on the handler we are looking for.
+  \param[out] handler If found, the pointer to the handler function is returned
+  here. Ignore this by setting it to `NULL`.
+  \param[out] user_data The arbitrary data associated to `handler`, usually
+  used to form a closure. Ignore this by setting it to `NULL`.
+  \return \ref tinywot_status
+  \sa `tinywot_thing_get_handler()`, `tinywot_thing_get_handler_by_name()`
+*/
+static inline int tinywot_thing_get_handler_by_path(
   struct tinywot_thing const *self,
   char const *path,
   enum tinywot_operation_type op,
-  struct tinywot_scratchpad const *input,
-  struct tinywot_scratchpad *output
-);
+  tinywot_form_handler_t **handler,
+  void **user_data
+)
+{
+  return tinywot_thing_get_handler(self, NULL, path, op, handler, user_data);
+}
 
 /*!
-  \brief Read a property from a `tinywot_thing`.
+  \brief Set a handler on an affordance.
 
-  This is a wrapper of `tinywot_thing_do` -- the operation type has been
-  implied by the function.
+  Note that `path` should be a path name, not a full IRI. The protocol stack
+  implementation should take care of this and ignore the domain part after
+  validation.
 
-  \param[in] self A `tinywot_thing`.
-  \param[in] path The path name to use to search for a handler.
-  \param[out] output A buffer for the invoked handler to write data out.
+  \param[inout] self A Thing.
+  \param[in] name The name of affordance. This can be found on a corresponding
+  Thing Description.
+  \param[in] path The path name in IRI described on a corresponding Thing
+  Description.
+  \param[in] op The operation type allowed on the handler we are looking for.
+  \param[out] handler If found, the pointer to the handler function is returned
+  here. If this is `NULL`, then this is not returned.
+  \param[out] user_data The arbitrary data associated to `handler`, usually
+  forming a closure.
   \return \ref tinywot_status
 */
-int tinywot_thing_read_property(
-  struct tinywot_thing const *self,
+int tinywot_thing_set_handler(
+  struct tinywot_thing *self,
+  char const *name,
   char const *path,
-  struct tinywot_scratchpad *output
+  enum tinywot_operation_type op,
+  tinywot_form_handler_t *handler,
+  void *user_data
 );
 
 /*!
-  \brief Write a property from a `tinywot_thing`.
+  \brief Perform an operation on a Thing.
 
-  This is a wrapper of `tinywot_thing_do` -- the operation type has been
-  implied by the function.
+  The function invokes `tinywot_thing_get_handler()` first to find a handler
+  based on `name`, `path` and `op`. See the documentation for that function for
+  a detailed behavior of this function.
 
-  \param[in] self A `tinywot_thing`.
-  \param[in] path The path name to use to search for a handler.
-  \param[in] input A buffer for the invoked handler to read data in.
+  \param[in] self A Thing.
+  \param[in] name The name of affordance. This can be found on a corresponding
+  Thing Description.
+  \param[in] path The path name in IRI described on a corresponding Thing
+  Description.
+  \param[in] op The operation type allowed on the handler we are looking for.
+  \param[inout] inout A buffer to supply to the invoked handler function for it
+  to use as both a parameter input buffer and a return output buffer.
   \return \ref tinywot_status
+  \sa `tinywot_thing_get_handler()`
 */
-int tinywot_thing_write_property(
+int tinywot_thing_do(
   struct tinywot_thing const *self,
+  char const *name,
   char const *path,
-  struct tinywot_scratchpad const *input
+  enum tinywot_operation_type op,
+  struct tinywot_scratchpad *inout
 );
 
 /*!
-  \brief Invoke an action from a `tinywot_thing`.
+  \brief Transform a Request into a Response with a Thing.
 
-  This is a wrapper of `tinywot_thing_do` -- the operation type has been
-  implied by the function.
-
-  \param[in] self A `tinywot_thing`.
-  \param[in] path The path name to use to search for a handler.
-  \param[in] input A buffer for the invoked handler to read data in.
-  \return \ref tinywot_status
-*/
-int tinywot_thing_invoke_action(
-  struct tinywot_thing const *self,
-  char const *path,
-  struct tinywot_scratchpad const *input
-);
-
-/*!
-  \brief Transform a `tinywot_request` into a `tinywot_response` using a
-  `tinywot_thing`.
-
-  This function finds a handler that supports the `request` in the supplied
-  `thing`. If none is found, `TINYWOT_ERROR_NOT_FOUND` is returned.
-
-  \param[in] self A `tinywot_thing`.
-  \param[in] request A network request.
-  \param[out] response A network response to be sent.
+  \param[in] self A Thing.
+  \param[in] request A received request.
+  \param[out] response A response ready to be sent.
   \return \ref tinywot_status
 */
 int tinywot_thing_process_request(
@@ -551,36 +707,42 @@ int tinywot_thing_process_request(
 */
 
 /*!
-  \brief Signature of a function reading data from the network.
+  \brief Signature of a function reading in raw data.
 
-  \param[out] ptr A pointer pointing to a valid region of memory.
-  \param[in] toread The number of bytes to read and place to `ptr`.
-  \param[out] read THe number of bytes that have actually been read.
+  \todo Clarify behavior.
+
+  \param[inout] buffer A pointer pointing to a valid region of memory.
+  \param[in] to_read_byte The number of bytes to read and place to `buffer`.
+  \param[out] read_byte The number of bytes that have actually been read.
   \return \ref tinywot_status
 */
-typedef int
-tinywot_io_read_function_t(uint8_t *ptr, size_t toread, size_t *read);
+typedef int tinywot_io_read_function_t(
+  unsigned char *buffer, size_t to_read_byte, size_t *read_byte
+);
 
 /*!
-  \brief Signature of a function writing data to the network.
+  \brief Signature of a function writing out raw data.
 
-  \param[out] ptr A pointer pointing to a valid region of memory.
-  \param[in] towrite The number of bytes to write from `ptr`.
-  \param[out] written THe number of bytes that have actually been written out.
+  \todo Clarify behavior.
+
+  \param[in] buffer A pointer pointing to a valid region of memory.
+  \param[in] to_write_byte The number of bytes to write from `buffer`.
+  \param[out] written_byte THe number of bytes that have actually been written
+  out.
   \return \ref tinywot_status
 */
 typedef int tinywot_io_write_function_t(
-  uint8_t const *ptr, size_t towrite, size_t *written
+  unsigned char const *buffer, size_t to_write_byte, size_t *written_byte
 );
 
 /*!
   \brief A read function and a write function.
 */
 struct tinywot_io {
-  /*! \brief A pointer to the function reading data from the network. */
+  /*! \brief A pointer to the function reading in raw data. */
   tinywot_io_read_function_t *read;
 
-  /*! \brief A pointer to the function writing data to the network. */
+  /*! \brief A pointer to the function writing out raw data. */
   tinywot_io_write_function_t *write;
 };
 
@@ -598,6 +760,7 @@ struct tinywot_io {
   https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#protocol-stack-implementation
   [wota-8.2]:
   https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#wot-runtime
+
   \{
 */
 
@@ -605,7 +768,7 @@ struct tinywot_io {
   \brief Signature of a function producing a `tinywot_request` using
   \ref tinywot_io functions.
 
-  \param[out] request A valid pointer to a `tinywot_request` storing the
+  \param[inout] request A valid pointer to a `tinywot_request` storing the
   received network request.
   \param[in] io A `tinywot_io` containing a read function and a write function.
   \return \ref tinywot_status
@@ -619,7 +782,7 @@ typedef int tinywot_protocol_receive_function_t(
   \brief Signature of a function producing a `tinywot_response` using
   \ref tinywot_io functions.
 
-  \param[out] response A valid pointer to a `tinywot_response` storing the
+  \param[in] response A valid pointer to a `tinywot_response` storing the
   network response to be sent.
   \param[in] io A `tinywot_io` containing a read function and a write function.
   \return \ref tinywot_status
@@ -662,22 +825,25 @@ struct tinywot_protocol {
 */
 struct tinywot_servient {
   /*! \brief \ref tinywot_thing */
-  struct tinywot_thing const *thing;
+  struct tinywot_thing thing;
 
   /*! \brief \ref tinywot_protocol */
-  struct tinywot_protocol const *protocol;
+  struct tinywot_protocol protocol;
 
   /*! \brief \ref tinywot_io */
-  struct tinywot_io const *io;
+  struct tinywot_io io;
 };
 
 /*!
   \brief Run the service routine of Servient once.
 
-  \param[in] self A `tinywot_servient`.
+  \param[in] self A `tinywot_servient` instance.
+  \param[in] scratchpad A segment of memory for successive procedures to use.
   \return \ref tinywot_status
 */
-int tinywot_servient_process(struct tinywot_servient const *self);
+int tinywot_servient_process(
+  struct tinywot_servient const *self, struct tinywot_scratchpad *scratchpad
+);
 
 /*! \} */ /* defgroup tinywot_servient */
 
