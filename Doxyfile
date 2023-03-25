@@ -3,7 +3,7 @@
 
 PROJECT_NAME = "TinyWoT"
 PROJECT_NUMBER = "0.3.0-dev"
-PROJECT_BRIEF = "A library for implementing a W3C Web of Things (WoT) compliant Web Thing on an embedded device."
+PROJECT_BRIEF = "A W3C Web of Things (WoT) framework targetting resource-constrained embedded devices."
 OUTPUT_DIRECTORY = doc
 TAB_SIZE = 2
 OPTIMIZE_OUTPUT_FOR_C = YES

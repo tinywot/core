@@ -1,7 +1,7 @@
 {
   "name": "tinywot",
   "version": "0.3.0-dev",
-  "description": "A library for implementing W3C Web of Things (WoT) on embedded devices",
+  "description": "A W3C Web of Things (WoT) framework targetting resource-constrained embedded devices.",
   "keywords": [
     "webofthings"
   ],
