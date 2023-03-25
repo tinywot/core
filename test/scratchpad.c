@@ -1,5 +1,5 @@
 /*
-  SPDX-FileCopyrightText: 2021-2023 Junde Yhi <junde@yhi.moe>
+  SPDX-FileCopyrightText: 2023 Junde Yhi <junde@yhi.moe>
   SPDX-License-Identifier: MIT
 */
 
