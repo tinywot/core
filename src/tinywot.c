@@ -37,6 +37,9 @@ int tinywot_scratchpad_split(
   /* Clear the target memory. */
   memset(right, 0, sizeof(struct tinywot_scratchpad));
 
+  /* We've checked this above, so right must be R/W. */
+  right->read_write = 1u;
+
   /* Copy the type hint. */
   right->type_hint = left->type_hint;
 
