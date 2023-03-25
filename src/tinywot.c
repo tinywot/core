@@ -80,7 +80,7 @@ void tinywot_thing_initialize_with_memory(
   memset(self, 0, sizeof(struct tinywot_thing));
   self->read_write = 1;
   /* self->forms_count_n = 0; */ /* it already is */
-  self->forms_max_n = memory_size_byte / sizeof(struct tinywot_thing);
+  self->forms_max_n = memory_size_byte / sizeof(struct tinywot_form);
   self->forms = memory;
 }
 
