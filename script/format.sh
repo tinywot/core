@@ -7,4 +7,4 @@
 
 set -e
 clang-format --version
-find include/ src/ -type f -print -exec clang-format -i {} \+
+find include/ src/ test/ -type f -print -exec clang-format -i {} \+
