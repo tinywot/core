@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2023 Junde Yhi <junde@yhi.moe>
+# SPDX-License-Identifier: CC0-1.0
+
+name: REUSE Compliance
+on:
+  - push
+  - pull_request
+  - workflow_dispatch
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v3
+
+      - name: Set Up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install REUSE Helper Tool
+        run: pip install reuse
+
+      - name: Run REUSE Lint
+        run: reuse lint

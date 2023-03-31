@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: 2023 Junde Yhi <junde@yhi.moe>
+# SPDX-License-Identifier: CC0-1.0
+
 name: PlatformIO
 on:
   - push
@@ -18,7 +21,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
+        run: pip install platformio
 
       - name: Run PlatformIO Check
         run: platformio check
@@ -36,7 +39,7 @@ jobs:
           python-version: '3.10'
 
       - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
+        run: pip install platformio
 
       - name: Run PlatformIO Test
         run: platformio test
