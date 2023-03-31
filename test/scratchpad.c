@@ -7,8 +7,6 @@
 #include <tinywot.h>
 #include <unity.h>
 
-#include "scratchpad.h"
-
 void test_tinywot_scratchpad_initialize_normal(void)
 {
   struct tinywot_scratchpad scratchpad;
