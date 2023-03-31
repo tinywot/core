@@ -10,4 +10,4 @@ void test_tinywot_thing_initialize_with_forms_normal(void);
 
 void test_tinywot_thing_initialize_with_memory_normal(void);
 
-#endif /* ifndef TINYWOT_TEST_THING_H */
+#endif /* TINYWOT_TEST_THING_H */

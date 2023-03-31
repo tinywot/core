@@ -851,4 +851,4 @@ int tinywot_servient_process(
 } /* extern "C" */
 #endif
 
-#endif /* ifndef TINYWOT_H */
+#endif /* TINYWOT_H */

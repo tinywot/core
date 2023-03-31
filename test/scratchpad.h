@@ -14,4 +14,4 @@ void test_tinywot_scratchpad_split_right_read_only(void);
 void test_tinywot_scratchpad_split_not_enough_size(void);
 void test_tinywot_scratchpad_split_not_enough_valid(void);
 
-#endif /* ifndef TINYWOT_TEST_SCRATCHPAD_H */
+#endif /* TINYWOT_TEST_SCRATCHPAD_H */
