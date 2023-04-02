@@ -523,7 +523,7 @@ struct tinywot_thing {
   size_t forms_max_n;
 
   /*! \brief A list of forms describing behaviors of this Thing. */
-  struct tinywot_form *forms;
+  struct tinywot_form const *forms;
 };
 
 /*!
@@ -716,7 +716,7 @@ int tinywot_thing_do(
 */
 int tinywot_thing_process_request(
   struct tinywot_thing const *self,
-  struct tinywot_request const *request,
+  struct tinywot_request *request,
   struct tinywot_response *response
 );
 

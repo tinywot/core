@@ -70,7 +70,7 @@ void tinywot_thing_initialize_with_forms(
   /* self->read_write = 0; */ /* it already is */
   self->forms_count_n = forms_size_n;
   self->forms_max_n = forms_size_n;
-  self->forms = (struct tinywot_form *)forms;
+  self->forms = forms;
 }
 
 void tinywot_thing_initialize_with_memory(
@@ -93,7 +93,7 @@ int tinywot_thing_get_handler(
   void **user_data
 )
 {
-  struct tinywot_form *form_i_p = NULL;
+  struct tinywot_form const *form_i_p = NULL;
 
   for (size_t i = 0; i < self->forms_count_n; i += 1) {
     form_i_p = &self->forms[i];
@@ -160,7 +160,13 @@ int tinywot_thing_set_handler(
      loop, then form_i and form_i_p retain respectively to be an index and a
      pointer to the last available slot in the Thing. */
   for (; form_i < self->forms_count_n;
-       form_i += 1, form_i_p = &self->forms[form_i]) {
+       form_i += 1,
+       /* NOTE: SEI CERT EXP05-C: This is exception EXP05-C-EX3.
+          We cast away the const qualification here, but `self->read_write` is
+          already in place to maintain the writability. Ignoring this check
+          here. */
+       /* cppcheck-suppress cert-EXP05-C */
+       form_i_p = (struct tinywot_form *)&self->forms[form_i]) {
     if (strcmp(form_i_p->name, name) == 0 && form_i_p->op == op) {
       form_i_p->handler = handler;
       form_i_p->user_data = user_data;
@@ -210,7 +216,7 @@ int tinywot_thing_do(
 
 int tinywot_thing_process_request(
   struct tinywot_thing const *self,
-  struct tinywot_request const *request,
+  struct tinywot_request *request,
   struct tinywot_response *response
 )
 {
@@ -219,7 +225,7 @@ int tinywot_thing_process_request(
   /* Because a Request is not aware of affordance names, here only path is used
      to find and run a handler. */
   status = tinywot_thing_do(
-    self, NULL, (char *)request->path.data, request->op, request->content
+    self, NULL, (char const *)request->path.data, request->op, request->content
   );
 
   /* Map TinyWoT status codes to Response status codes. */
