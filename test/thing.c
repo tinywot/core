@@ -79,28 +79,29 @@ void test_tinywot_thing_initialize_with_forms_normal(void)
     &thing, forms, sizeof(forms) / sizeof(struct tinywot_form)
   );
 
-  TEST_ASSERT_EQUAL_UINT(0u, thing.read_write);
-  TEST_ASSERT_EQUAL_UINT(3u, thing.forms_count_n);
-  TEST_ASSERT_EQUAL_UINT(3u, thing.forms_max_n);
+  TEST_ASSERT_EQUAL_UINT(0, thing.read_write);
+  TEST_ASSERT_EQUAL_UINT(3, thing.forms_count_n);
+  TEST_ASSERT_EQUAL_UINT(3, thing.forms_max_n);
   TEST_ASSERT_EQUAL_PTR(forms, thing.forms);
 }
 
 void test_tinywot_thing_initialize_with_memory_normal(void)
 {
   struct tinywot_thing thing;
-  void *memory;
+  void *memory = malloc(256);
 
-  memory = malloc(256u);
   if (!memory) {
     TEST_ABORT();
   }
 
-  tinywot_thing_initialize_with_memory(&thing, memory, 256u);
+  tinywot_thing_initialize_with_memory(&thing, memory, 256);
 
-  TEST_ASSERT_EQUAL_UINT(1u, thing.read_write);
-  TEST_ASSERT_EQUAL_UINT(0u, thing.forms_count_n);
+  TEST_ASSERT_EQUAL_UINT(1, thing.read_write);
+  TEST_ASSERT_EQUAL_UINT(0, thing.forms_count_n);
   TEST_ASSERT_EQUAL_UINT(256u / sizeof(struct tinywot_form), thing.forms_max_n);
   TEST_ASSERT_EQUAL_PTR(memory, thing.forms);
+
+  free(memory);
 }
 
 void test_tinywot_thing_get_handler_normal(void)
