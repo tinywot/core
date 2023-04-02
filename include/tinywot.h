@@ -11,7 +11,9 @@
 #ifndef TINYWOT_H
 #define TINYWOT_H
 
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,14 +63,14 @@ extern "C" {
 
   This is used to indicate an error without specifying a reason.
 */
-#define TINYWOT_ERROR_GENERAL (0)
+#define TINYWOT_ERROR_GENERAL 0
 
 /*!
   \brief Success.
 
   This is not an error.
 */
-#define TINYWOT_SUCCESS (1)
+#define TINYWOT_SUCCESS 1
 
 /*!
   \brief Check if a status code indicates an error.
@@ -76,7 +78,7 @@ extern "C" {
   \param[in] r An integer.
   \return `1` if `r` is an error, `0` if it is not.
 */
-static inline int tinywot_is_error(int r) { return r <= 0; }
+static inline bool tinywot_is_error(int r) { return r <= 0; }
 
 /*!
   \brief Check if a status code indicates a success.
@@ -84,7 +86,7 @@ static inline int tinywot_is_error(int r) { return r <= 0; }
   \param[in] r An integer.
   \return `1` if `r` is a success, `0` if it is not.
 */
-static inline int tinywot_is_success(int r) { return r > 0; }
+static inline bool tinywot_is_success(int r) { return r > 0; }
 
 /*! \} */ /* defgroup tinywot_status */
 
@@ -118,7 +120,7 @@ static inline int tinywot_is_success(int r) { return r > 0; }
   https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats
   [RFC7252]: https://www.rfc-editor.org/rfc/rfc7252.html
 */
-#define TINYWOT_CONTENT_TYPE_UNKNOWN (65535u)
+#define TINYWOT_CONTENT_TYPE_UNKNOWN 65535
 
 /*!
   \brief A segment of memory with metadata.
@@ -133,7 +135,7 @@ struct tinywot_scratchpad {
     This helps preventing accidental write to a constant, provided that this
     field is checked before attempting to write into `::data`.
   */
-  unsigned int read_write;
+  bool read_write;
 
   /*!
     \brief An arbitrary unsigned integer hinting the type of data pointed by
@@ -149,7 +151,7 @@ struct tinywot_scratchpad {
     [CoAP Content-Formats]:
     https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats
   */
-  unsigned int type_hint;
+  uint16_t type_hint;
 
   /*!
     \brief The full size of memory pointed by `::data`, in bytes.
@@ -170,7 +172,7 @@ struct tinywot_scratchpad {
 
     If `::size_byte` is `0`, then this field can be `NULL`.
   */
-  unsigned char *data;
+  uint8_t *data;
 
   /*!
     \brief Load data to the memory pointed by `::data`.
@@ -192,12 +194,38 @@ struct tinywot_scratchpad {
 };
 
 /*!
+  \brief Create a new scratchpad.
+
+  This inline function is designed for scratchpad variable initialization,
+  setting `tinywot_scratchpad::type_hint` to `TINYWOT_CONTENT_TYPE_UNKNOWN`.
+
+  ```c
+  struct tinywot_scratchpad scratchpad = tinywot_scratchpad_new();
+  ```
+
+  \return An initialized scratchpad.
+  \sa `tinywot_scratchpad_initialize()`
+*/
+static inline struct tinywot_scratchpad tinywot_scratchpad_new(void)
+{
+  return (struct tinywot_scratchpad) {
+    .type_hint = TINYWOT_CONTENT_TYPE_UNKNOWN,
+  };
+}
+
+/*!
   \brief Initialize a scratchpad.
 
-  This clears the memory pointed by `self` and sets
-  `tinywot_scratchpad::type_hint` to `TINYWOT_CONTENT_TYPE_UNKNOWN`.
+  This function is designed to be used on a pointer to an existing scratchpad,
+  setting `tinywot_scratchpad::type_hint` to `TINYWOT_CONTENT_TYPE_UNKNOWN`.
 
-  \param[inout] self A scratchpad.
+  ```c
+  struct tinywot_scratchpad scratchpad;
+  tinywot_scratchpad_initialize(&scratchpad);
+  ```
+
+  \param[inout] self A pointer to a scratchpad.
+  \sa `tinywot_scratchpad_new()`
 */
 void tinywot_scratchpad_initialize(struct tinywot_scratchpad *self);
 
@@ -486,7 +514,7 @@ struct tinywot_thing {
     This helps preventing accidental write to a constant, provided that this
     field is checked before attempting to write into `::forms`.
   */
-  unsigned int read_write;
+  bool read_write;
 
   /*! \brief The number of registered forms in `::forms`. */
   size_t forms_count_n;
