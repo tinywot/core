@@ -148,7 +148,12 @@ int tinywot_thing_set_handler(
 )
 {
   size_t form_i = 0;
-  struct tinywot_form *form_i_p = NULL;
+
+  /* NOTE: We cast away the const qualification here, but `self->read_write` is
+     already in place to maintain the writability. This is exception
+     EXP05-C-EX3 in SEI CERT. Ignoring this check here. */
+  /* cppcheck-suppress cert-EXP05-C */
+  struct tinywot_form *form_i_p = (struct tinywot_form *)self->forms;
 
   /* Check R/W before doing anything. */
   if (!self->read_write) {
@@ -159,14 +164,7 @@ int tinywot_thing_set_handler(
      replaced with the supplied new closure. If it doesn't return inside the
      loop, then form_i and form_i_p retain respectively to be an index and a
      pointer to the last available slot in the Thing. */
-  for (; form_i < self->forms_count_n;
-       form_i += 1,
-       /* NOTE: SEI CERT EXP05-C: This is exception EXP05-C-EX3.
-          We cast away the const qualification here, but `self->read_write` is
-          already in place to maintain the writability. Ignoring this check
-          here. */
-       /* cppcheck-suppress cert-EXP05-C */
-       form_i_p = (struct tinywot_form *)&self->forms[form_i]) {
+  for (; form_i < self->forms_count_n; form_i += 1, form_i_p += 1) {
     if (strcmp(form_i_p->name, name) == 0 && form_i_p->op == op) {
       form_i_p->handler = handler;
       form_i_p->user_data = user_data;
