@@ -271,26 +271,40 @@ void test_tinywot_thing_do(void)
     TEST_ABORT();
   }
 
-  tinywot_thing_initialize_with_forms(&thing, forms, sizeof(forms) / sizeof(struct tinywot_form));
+  tinywot_thing_initialize_with_forms(
+    &thing, forms, sizeof(forms) / sizeof(struct tinywot_form)
+  );
   tinywot_scratchpad_initialize(&scratchpad);
   scratchpad.read_write = true;
   scratchpad.size_byte = 256;
   scratchpad.data = memory;
 
-  r = tinywot_thing_do(&thing, "foo", "/foo", TINYWOT_OPERATION_TYPE_READPROPERTY, &scratchpad);
+  r = tinywot_thing_do(
+    &thing, "foo", "/foo", TINYWOT_OPERATION_TYPE_READPROPERTY, &scratchpad
+  );
   TEST_ASSERT_EQUAL_INT(TINYWOT_SUCCESS, r);
-  TEST_ASSERT_EQUAL_UINT(strlen(DUMMY_USER_DATA_FOO_READPROPERTY) + 1, scratchpad.valid_byte);
+  TEST_ASSERT_EQUAL_UINT(
+    strlen(DUMMY_USER_DATA_FOO_READPROPERTY) + 1, scratchpad.valid_byte
+  );
   TEST_ASSERT_EQUAL_STRING(DUMMY_USER_DATA_FOO_READPROPERTY, scratchpad.data);
 
-  r = tinywot_thing_do(&thing, NULL, "/foo", TINYWOT_OPERATION_TYPE_WRITEPROPERTY, &scratchpad);
+  r = tinywot_thing_do(
+    &thing, NULL, "/foo", TINYWOT_OPERATION_TYPE_WRITEPROPERTY, &scratchpad
+  );
   TEST_ASSERT_EQUAL_INT(TINYWOT_SUCCESS, r);
 
-  r = tinywot_thing_do(&thing, "bar", NULL, TINYWOT_OPERATION_TYPE_READPROPERTY, &scratchpad);
+  r = tinywot_thing_do(
+    &thing, "bar", NULL, TINYWOT_OPERATION_TYPE_READPROPERTY, &scratchpad
+  );
   TEST_ASSERT_EQUAL_INT(TINYWOT_SUCCESS, r);
-  TEST_ASSERT_EQUAL_UINT(strlen(DUMMY_USER_DATA_BAR_READPROPERTY) + 1, scratchpad.valid_byte);
+  TEST_ASSERT_EQUAL_UINT(
+    strlen(DUMMY_USER_DATA_BAR_READPROPERTY) + 1, scratchpad.valid_byte
+  );
   TEST_ASSERT_EQUAL_STRING(DUMMY_USER_DATA_BAR_READPROPERTY, scratchpad.data);
 
-  r = tinywot_thing_do(&thing, "baz", NULL, TINYWOT_OPERATION_TYPE_READPROPERTY, &scratchpad);
+  r = tinywot_thing_do(
+    &thing, "baz", NULL, TINYWOT_OPERATION_TYPE_READPROPERTY, &scratchpad
+  );
   TEST_ASSERT_EQUAL_INT(TINYWOT_ERROR_NOT_FOUND, r);
 
   free(memory);
@@ -312,7 +326,9 @@ void test_tinywot_thing_process_request(void)
   }
 
   tinywot_scratchpad_initialize(&scratchpad);
-  tinywot_thing_initialize_with_forms(&thing, forms, sizeof(forms) / sizeof(struct tinywot_form));
+  tinywot_thing_initialize_with_forms(
+    &thing, forms, sizeof(forms) / sizeof(struct tinywot_form)
+  );
   memset(&request, 0, sizeof(struct tinywot_request));
   memset(&response, 0, sizeof(struct tinywot_response));
 
@@ -345,8 +361,12 @@ void test_tinywot_thing_process_request(void)
   TEST_ASSERT_EQUAL_INT(TINYWOT_RESPONSE_STATUS_OK, response.status);
   TEST_ASSERT_NOT_NULL(response.content);
 
-  TEST_ASSERT_EQUAL_UINT(strlen(DUMMY_USER_DATA_FOO_READPROPERTY) + 1, response.content->valid_byte);
-  TEST_ASSERT_EQUAL_STRING(DUMMY_USER_DATA_FOO_READPROPERTY, response.content->data);
+  TEST_ASSERT_EQUAL_UINT(
+    strlen(DUMMY_USER_DATA_FOO_READPROPERTY) + 1, response.content->valid_byte
+  );
+  TEST_ASSERT_EQUAL_STRING(
+    DUMMY_USER_DATA_FOO_READPROPERTY, response.content->data
+  );
 
   free(memory);
 }
