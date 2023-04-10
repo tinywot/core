@@ -684,8 +684,9 @@ int tinywot_thing_set_handler(
   \brief Perform an operation on a Thing.
 
   The function invokes `tinywot_thing_get_handler()` first to find a handler
-  based on `name`, `path` and `op`. See the documentation for that function for
-  a detailed behavior of this function.
+  based on `name`, `path` and `op`. As a result, they are optional. See the
+  documentation of `tinywot_thing_get_handler()` for a detailed behavior of this
+  function.
 
   \param[in] self A Thing.
   \param[in] name The name of affordance. This can be found on a corresponding
