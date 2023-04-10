@@ -19,6 +19,9 @@ void test_tinywot_thing_initialize_with_forms_normal(void);
 void test_tinywot_thing_initialize_with_memory_normal(void);
 void test_tinywot_thing_get_handler_normal(void);
 void test_tinywot_thing_get_handler_non_existent(void);
+void test_tinywot_thing_set_handler_until_full(void);
+void test_tinywot_thing_do(void);
+void test_tinywot_thing_process_request(void);
 
 /* These are necessary to keep Unity happy. */
 
@@ -40,6 +43,9 @@ int main(void)
   RUN_TEST(test_tinywot_thing_initialize_with_memory_normal);
   RUN_TEST(test_tinywot_thing_get_handler_normal);
   RUN_TEST(test_tinywot_thing_get_handler_non_existent);
+  RUN_TEST(test_tinywot_thing_set_handler_until_full);
+  RUN_TEST(test_tinywot_thing_do);
+  RUN_TEST(test_tinywot_thing_process_request);
 
   return UNITY_END();
 }
