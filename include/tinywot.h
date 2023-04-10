@@ -38,22 +38,22 @@ extern "C" {
 /*!
   \brief A requested operation is not allowed.
 
-  This can happen when a path is registered to one or a few handlers accepting
-  operations but the requested one.
+  This can happen when a target can be matched, but does not accept the
+  operation type requested.
 */
 #define TINYWOT_ERROR_NOT_ALLOWED (-4)
 
 /*!
   \brief A function is not implemented.
 
-  This can happen when a path is registered to a `NULL` handler.
+  This can happen when a target is registered to a `NULL` handler.
 */
 #define TINYWOT_ERROR_NOT_IMPLEMENTED (-3)
 
 /*!
   \brief Something is missing.
 
-  This can happen when a requested path and operation type cannot match any
+  This can happen when a requested target and operation type cannot match any
   handler registered in a `tinywot_thing` instance.
 */
 #define TINYWOT_ERROR_NOT_FOUND (-2)
@@ -425,14 +425,14 @@ enum tinywot_response_status {
 */
 struct tinywot_request {
   /*!
-    \brief The path name of the target IRI in the request.
+    \brief The submission target extracted from the request.
 
     The use of a scratchpad here is because it could be sliced from `::content`
     to use a single space provided by the user.
 
     \sa `tinywot_scratchpad_split()`
   */
-  struct tinywot_scratchpad path;
+  struct tinywot_scratchpad target;
 
   /*! \brief The operation type requested. */
   enum tinywot_operation_type op;
@@ -460,17 +460,22 @@ struct tinywot_response {
   \{
 */
 
+/* This forward declaration is for `tinywot_form_handler_t`. */
+struct tinywot_form;
+
 /*!
   \brief Signature of a handler function implementing the behavior of an
   affordance.
 
+  \param[in] form The form definition triggering the invocation of this
+  function.
   \param[inout] inout A memory buffer carrying input arguments and output
   values.
-  \param[inout] user_data The context data registered in `tinywot_form`.
   \return \ref tinywot_status
 */
-typedef int
-tinywot_form_handler_t(struct tinywot_scratchpad *inout, void *user_data);
+typedef int tinywot_form_handler_t(
+  struct tinywot_form const *form, struct tinywot_scratchpad *inout
+);
 
 /*!
   \brief An operation endpoint.
@@ -479,14 +484,30 @@ struct tinywot_form {
   /*!
     \brief The name of affordance that this form is attached to.
 
-    For a top-level form, this field should be left empty (`NULL`).
+    For a top-level form, this field should be set to `NULL`.
+
+    This field is so far informative only -- no procedure relies on its value.
+    The form handler (`::handler`) may inspect this field via its `form`
+    parameter.
   */
   char const *name;
 
   /*!
-    \brief The path name of the IRI in `href` in the form.
+    \brief The submission target of the form.
+
+    The exact way to specify a _submission target_ is undefined. Often, for an
+    IRI specified in a Thing Description document, this should be the path name
+    of it. For example, for the following IRI:
+
+        http://thing.example.com/action/update
+
+    Its path name is `/action/update`, so this field should be `/action/update`.
+    This largely depends on the protocol implementation, who is responsible for
+    extracting this information from the request message, and methods like
+    `tinywot_thing_do()` finds the form according to this field. Check their
+    documentation for more information.
   */
-  char const *path;
+  char const *target;
 
   /*!
     \brief The allowed operation type on this form.
@@ -557,18 +578,18 @@ void tinywot_thing_initialize_with_memory(
 );
 
 /*!
-  \brief Find and get a handler from a Thing.
+  \brief Find and get a form from a Thing.
 
   Depending on the supplied arguments:
 
-  - If both `name` and `path` are non-`NULL`, then the first closure with `name`
-    on `path` is returned.
-  - If `name` is non-`NULL`, `path` is `NULL`, then the first closure with
-    `name` is returned.
-  - If `name` is `NULL`, `path` is non-`NULL`, then the first closure on `path`
-    is returned.
-  - If both `name` and `path` are `NULL`, then the first closure allowing `op`
-    is returned.
+  - If both `name` and `target` are non-`NULL`, then the first closure with
+  `name` on `target` is returned.
+  - If `name` is non-`NULL`, `target` is `NULL`, then the first closure with
+  `name` is returned.
+  - If `name` is `NULL`, `target` is non-`NULL`, then the first closure on
+  `target` is returned.
+  - If both `name` and `target` are `NULL`, then the first closure allowing `op`
+  is returned.
 
   In any case, `op` is checked for equality and does not prevent
   `::TINYWOT_OPERATION_TYPE_UNKNOWN` from being returned.
@@ -576,8 +597,34 @@ void tinywot_thing_initialize_with_memory(
   \param[in] self A Thing.
   \param[in] name The name of affordance. This can be found on a corresponding
   Thing Description.
-  \param[in] path The path name in IRI described on a corresponding Thing
-  Description (in `href`).
+  \param[in] target The submission target. This can be derived from a
+  corresponding Thing Description.
+  \param[in] op The operation type allowed on the handler we are looking for.
+  \param[out] form The form describing the submission target registered to the
+  Thing.
+  \return \ref tinywot_status
+  \sa `tinywot_thing_get_handler()`
+*/
+int tinywot_thing_get_form(
+  struct tinywot_thing const *self,
+  char const *name,
+  char const *target,
+  enum tinywot_operation_type op,
+  struct tinywot_form const **form
+);
+
+/*!
+  \brief Find and get a handler from a Thing.
+
+  This is a wrapper on `tinywot_thing_get_form()`. Instead of a `form`, only
+  `handler` and `user_data` are returned in this function. Read the
+  documentation of `tinywot_thing_get_form()` for the behavior of this function.
+
+  \param[in] self A Thing.
+  \param[in] name The name of affordance. This can be found on a corresponding
+  Thing Description.
+  \param[in] target The submission target. This can be derived from a
+  corresponding Thing Description.
   \param[in] op The operation type allowed on the handler we are looking for.
   \param[out] handler If found, the pointer to the handler function is returned
   here. Ignore this by setting it to `NULL`.
@@ -585,12 +632,12 @@ void tinywot_thing_initialize_with_memory(
   used to form a closure. Ignore this by setting it to `NULL`.
   \return \ref tinywot_status
   \sa `tinywot_thing_get_handler_by_name()`,
-  `tinywot_thing_get_handler_by_path()`
+  `tinywot_thing_get_handler_by_target()`
 */
 int tinywot_thing_get_handler(
   struct tinywot_thing const *self,
   char const *name,
-  char const *path,
+  char const *target,
   enum tinywot_operation_type op,
   tinywot_form_handler_t **handler,
   void **user_data
@@ -600,7 +647,7 @@ int tinywot_thing_get_handler(
   \brief Find and get a handler from a Thing according to the affordance name.
 
   This is a convenience wrapper on `tinywot_thing_get_handler()` without the
-  `path` parameter.
+  `target` parameter.
 
   \param[in] self A Thing.
   \param[in] name The name of affordance. This can be found on a corresponding
@@ -611,7 +658,7 @@ int tinywot_thing_get_handler(
   \param[out] user_data The arbitrary data associated to `handler`, usually
   used to form a closure. Ignore this by setting it to `NULL`.
   \return \ref tinywot_status
-  \sa `tinywot_thing_get_handler()`, `tinywot_thing_get_handler_by_path()`
+  \sa `tinywot_thing_get_handler()`, `tinywot_thing_get_handler_by_target()`
 */
 static inline int tinywot_thing_get_handler_by_name(
   struct tinywot_thing const *self,
@@ -631,7 +678,7 @@ static inline int tinywot_thing_get_handler_by_name(
   `name` parameter.
 
   \param[in] self A Thing.
-  \param[in] path The path name in IRI described on a corresponding Thing
+  \param[in] target The target name in IRI described on a corresponding Thing
   Description (in `href`).
   \param[in] op The operation type allowed on the handler we are looking for.
   \param[out] handler If found, the pointer to the handler function is returned
@@ -641,40 +688,37 @@ static inline int tinywot_thing_get_handler_by_name(
   \return \ref tinywot_status
   \sa `tinywot_thing_get_handler()`, `tinywot_thing_get_handler_by_name()`
 */
-static inline int tinywot_thing_get_handler_by_path(
+static inline int tinywot_thing_get_handler_by_target(
   struct tinywot_thing const *self,
-  char const *path,
+  char const *target,
   enum tinywot_operation_type op,
   tinywot_form_handler_t **handler,
   void **user_data
 )
 {
-  return tinywot_thing_get_handler(self, NULL, path, op, handler, user_data);
+  return tinywot_thing_get_handler(self, NULL, target, op, handler, user_data);
 }
 
 /*!
   \brief Set a handler on an affordance.
 
-  Note that `path` should be a path name, not a full IRI. The protocol stack
-  implementation should take care of this and ignore the domain part after
-  validation.
-
   \param[inout] self A Thing.
   \param[in] name The name of affordance. This can be found on a corresponding
   Thing Description.
-  \param[in] path The path name in IRI described on a corresponding Thing
-  Description.
+  \param[in] target The submission target. This can be derived from a
+  corresponding Thing Description.
   \param[in] op The operation type allowed on the handler we are looking for.
   \param[out] handler If found, the pointer to the handler function is returned
   here. If this is `NULL`, then this is not returned.
   \param[out] user_data The arbitrary data associated to `handler`, usually
   forming a closure.
   \return \ref tinywot_status
+  \sa `tinywot_thing`, `tinywot_form`
 */
 int tinywot_thing_set_handler(
   struct tinywot_thing *self,
   char const *name,
-  char const *path,
+  char const *target,
   enum tinywot_operation_type op,
   tinywot_form_handler_t *handler,
   void *user_data
@@ -684,15 +728,15 @@ int tinywot_thing_set_handler(
   \brief Perform an operation on a Thing.
 
   The function invokes `tinywot_thing_get_handler()` first to find a handler
-  based on `name`, `path` and `op`. As a result, they are optional. See the
+  based on `name`, `target` and `op`. As a result, they are optional. See the
   documentation of `tinywot_thing_get_handler()` for a detailed behavior of this
   function.
 
   \param[in] self A Thing.
   \param[in] name The name of affordance. This can be found on a corresponding
   Thing Description.
-  \param[in] path The path name in IRI described on a corresponding Thing
-  Description.
+  \param[in] target The submission target. This can be derived from a
+  corresponding Thing Description.
   \param[in] op The operation type allowed on the handler we are looking for.
   \param[inout] inout A buffer to supply to the invoked handler function for it
   to use as both a parameter input buffer and a return output buffer.
@@ -702,7 +746,7 @@ int tinywot_thing_set_handler(
 int tinywot_thing_do(
   struct tinywot_thing const *self,
   char const *name,
-  char const *path,
+  char const *target,
   enum tinywot_operation_type op,
   struct tinywot_scratchpad *inout
 );

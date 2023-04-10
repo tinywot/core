@@ -84,19 +84,18 @@ void tinywot_thing_initialize_with_memory(
   self->forms = memory;
 }
 
-int tinywot_thing_get_handler(
+int tinywot_thing_get_form(
   struct tinywot_thing const *self,
   char const *name,
-  char const *path,
+  char const *target,
   enum tinywot_operation_type op,
-  tinywot_form_handler_t **handler,
-  void **user_data
+  struct tinywot_form const **form
 )
 {
   struct tinywot_form const *form_i_p = NULL;
 
-  for (size_t i = 0; i < self->forms_count_n; i += 1) {
-    form_i_p = &self->forms[i];
+  for (size_t form_i = 0; form_i < self->forms_count_n; form_i += 1) {
+    form_i_p = &self->forms[form_i];
 
     /* This filters out any non-matching ops. */
     if (form_i_p->op != op) {
@@ -110,24 +109,19 @@ int tinywot_thing_get_handler(
       }
     }
 
-    /* This filters out any non-matching paths, if one is supplied. */
-    if (path) {
-      if (strcmp(form_i_p->path, path) != 0) {
+    /* This filters out any non-matching target, if one is supplied. */
+    if (target) {
+      if (strcmp(form_i_p->target, target) != 0) {
         continue;
       }
     }
 
     /* At this point, every matching condition has been met.
 
-       A user can choose to not retrieve the pointers if they only want to
+       A user can choose to not retrieve the pointer if they only want to
        know whether the form exists (by checking the return code). */
-
-    if (handler) {
-      *handler = form_i_p->handler;
-    }
-
-    if (user_data) {
-      *user_data = form_i_p->user_data;
+    if (form) {
+      *form = form_i_p;
     }
 
     return TINYWOT_SUCCESS;
@@ -138,10 +132,41 @@ int tinywot_thing_get_handler(
   return TINYWOT_ERROR_NOT_FOUND;
 }
 
+int tinywot_thing_get_handler(
+  struct tinywot_thing const *self,
+  char const *name,
+  char const *target,
+  enum tinywot_operation_type op,
+  tinywot_form_handler_t **handler,
+  void **user_data
+)
+{
+  struct tinywot_form const *form = NULL;
+  int r = 0;
+
+  r = tinywot_thing_get_form(self, name, target, op, &form);
+  if (tinywot_is_error(r)) {
+    return r;
+  }
+
+  /* A user can choose to not retrieve the pointer if they only want to know
+     whether the form exists (by checking the return code). */
+
+  if (handler) {
+    *handler = form->handler;
+  }
+
+  if (user_data) {
+    *user_data = form->user_data;
+  }
+
+  return TINYWOT_SUCCESS;
+}
+
 int tinywot_thing_set_handler(
   struct tinywot_thing *self,
   char const *name,
-  char const *path,
+  char const *target,
   enum tinywot_operation_type op,
   tinywot_form_handler_t *handler,
   void *user_data
@@ -183,7 +208,7 @@ int tinywot_thing_set_handler(
   self->forms_count_n += 1;
 
   form_i_p->name = name;
-  form_i_p->path = path;
+  form_i_p->target = target;
   form_i_p->op = op;
   form_i_p->handler = handler;
   form_i_p->user_data = user_data;
@@ -194,22 +219,20 @@ int tinywot_thing_set_handler(
 int tinywot_thing_do(
   struct tinywot_thing const *self,
   char const *name,
-  char const *path,
+  char const *target,
   enum tinywot_operation_type op,
   struct tinywot_scratchpad *inout
 )
 {
-  tinywot_form_handler_t *handler = NULL;
-  void *user_data = NULL;
-  int status = TINYWOT_ERROR_GENERAL;
+  struct tinywot_form const *form = NULL;
+  int r = TINYWOT_ERROR_GENERAL;
 
-  status
-    = tinywot_thing_get_handler(self, name, path, op, &handler, &user_data);
-  if (tinywot_is_error(status)) {
-    return status;
+  r = tinywot_thing_get_form(self, name, target, op, &form);
+  if (tinywot_is_error(r)) {
+    return r;
   }
 
-  return handler(inout, user_data);
+  return form->handler(form, inout);
 }
 
 int tinywot_thing_process_request(
@@ -220,10 +243,14 @@ int tinywot_thing_process_request(
 {
   int status = TINYWOT_ERROR_GENERAL;
 
-  /* Because a Request is not aware of affordance names, here only path is used
-     to find and run a handler. */
+  /* Because a request is not aware of affordance names, here only target is
+     used to find and run a handler. */
   status = tinywot_thing_do(
-    self, NULL, (char const *)request->path.data, request->op, request->content
+    self,
+    NULL,
+    (char const *)request->target.data,
+    request->op,
+    request->content
   );
 
   /* Map TinyWoT status codes to Response status codes. */

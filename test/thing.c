@@ -16,13 +16,13 @@
 #define DUMMY_USER_DATA_BAR_READPROPERTY ((char const *)"-barb--b--")
 
 static int dummy_handler_foo_readproperty(
-  struct tinywot_scratchpad *inout, void *user_data
+  struct tinywot_form const *form, struct tinywot_scratchpad *inout
 )
 {
+  TEST_ASSERT_NOT_NULL(form);
   TEST_ASSERT_NOT_NULL(inout);
-  TEST_ASSERT_EQUAL_STRING(DUMMY_USER_DATA_FOO_READPROPERTY, user_data);
 
-  size_t data_length = strlen(DUMMY_USER_DATA_FOO_READPROPERTY) + 1;
+  size_t data_length = strlen((char const *)form->user_data) + 1;
 
   if (!inout->read_write) {
     return TINYWOT_ERROR_NOT_ALLOWED;
@@ -33,29 +33,29 @@ static int dummy_handler_foo_readproperty(
   }
 
   inout->valid_byte = data_length;
-  memcpy(inout->data, DUMMY_USER_DATA_FOO_READPROPERTY, data_length);
+  memcpy(inout->data, form->user_data, data_length);
 
   return TINYWOT_SUCCESS;
 }
 
 static int dummy_handler_foo_writeproperty(
-  struct tinywot_scratchpad *inout, void *user_data
+  struct tinywot_form const *form, struct tinywot_scratchpad *inout
 )
 {
+  TEST_ASSERT_NOT_NULL(form);
   TEST_ASSERT_NOT_NULL(inout);
-  TEST_ASSERT_EQUAL_STRING(DUMMY_USER_DATA_FOO_WRITEPROPERTY, user_data);
 
   return TINYWOT_SUCCESS;
 }
 
 static int dummy_handler_bar_readproperty(
-  struct tinywot_scratchpad *inout, void *user_data
+  struct tinywot_form const *form, struct tinywot_scratchpad *inout
 )
 {
+  TEST_ASSERT_NOT_NULL(form);
   TEST_ASSERT_NOT_NULL(inout);
-  TEST_ASSERT_EQUAL_STRING(DUMMY_USER_DATA_BAR_READPROPERTY, user_data);
 
-  size_t data_length = strlen(DUMMY_USER_DATA_BAR_READPROPERTY) + 1;
+  size_t data_length = strlen((char const *)form->user_data) + 1;
 
   if (!inout->read_write) {
     return TINYWOT_ERROR_NOT_ALLOWED;
@@ -66,7 +66,7 @@ static int dummy_handler_bar_readproperty(
   }
 
   inout->valid_byte = data_length;
-  memcpy(inout->data, DUMMY_USER_DATA_BAR_READPROPERTY, data_length);
+  memcpy(inout->data, form->user_data, data_length);
 
   return TINYWOT_SUCCESS;
 }
@@ -74,21 +74,21 @@ static int dummy_handler_bar_readproperty(
 static struct tinywot_form const forms[] = {
   {
     .name = "foo",
-    .path = "/foo",
+    .target = "/foo",
     .op = TINYWOT_OPERATION_TYPE_READPROPERTY,
     .handler = dummy_handler_foo_readproperty,
     .user_data = (void *)DUMMY_USER_DATA_FOO_READPROPERTY,
   },
   {
     .name = "foo",
-    .path = "/foo",
+    .target = "/foo",
     .op = TINYWOT_OPERATION_TYPE_WRITEPROPERTY,
     .handler = dummy_handler_foo_writeproperty,
     .user_data = (void *)DUMMY_USER_DATA_FOO_WRITEPROPERTY,
   },
   {
     .name = "bar",
-    .path = "/bar",
+    .target = "/bar",
     .op = TINYWOT_OPERATION_TYPE_READPROPERTY,
     .handler = dummy_handler_bar_readproperty,
     .user_data = (void *)DUMMY_USER_DATA_BAR_READPROPERTY,
@@ -165,7 +165,7 @@ void test_tinywot_thing_get_handler_normal(void)
   TEST_ASSERT_EQUAL_PTR(dummy_handler_bar_readproperty, handler);
   TEST_ASSERT_EQUAL_STRING(DUMMY_USER_DATA_BAR_READPROPERTY, user_data);
 
-  r = tinywot_thing_get_handler_by_path(
+  r = tinywot_thing_get_handler_by_target(
     &thing, "/foo", TINYWOT_OPERATION_TYPE_READPROPERTY, &handler, &user_data
   );
   TEST_ASSERT_EQUAL_INT(TINYWOT_SUCCESS, r);
@@ -204,7 +204,7 @@ void test_tinywot_thing_get_handler_non_existent(void)
   TEST_ASSERT_EQUAL_PTR(nonsense, handler);
   TEST_ASSERT_EQUAL_PTR(nonsense, user_data);
 
-  r = tinywot_thing_get_handler_by_path(
+  r = tinywot_thing_get_handler_by_target(
     &thing, "/foo", TINYWOT_OPERATION_TYPE_INVOKEACTION, &handler, &user_data
   );
   TEST_ASSERT_EQUAL_INT(TINYWOT_ERROR_NOT_FOUND, r);
@@ -338,20 +338,22 @@ void test_tinywot_thing_process_request(void)
   scratchpad.data = memory;
 
   /* Note that both operands need to be read-write. */
-  request.path.read_write = true;
+  request.target.read_write = true;
 
-  /* Splitting the main scratchpad to a path one and a content one. This would
+  /* Splitting the main scratchpad to a target one and a content one. This would
      be done in protocol implementation libraries. */
-  r = tinywot_scratchpad_split(&scratchpad, &request.path, strlen("/foo") + 1);
+  r = tinywot_scratchpad_split(
+    &scratchpad, &request.target, strlen("/foo") + 1
+  );
   TEST_ASSERT_EQUAL_INT(TINYWOT_SUCCESS, r);
-  TEST_ASSERT_TRUE(request.path.read_write);
-  TEST_ASSERT_EQUAL_UINT(strlen("/foo") + 1, request.path.size_byte);
-  TEST_ASSERT_EQUAL_UINT(0, request.path.valid_byte);
-  TEST_ASSERT_NOT_NULL(request.path.data);
+  TEST_ASSERT_TRUE(request.target.read_write);
+  TEST_ASSERT_EQUAL_UINT(strlen("/foo") + 1, request.target.size_byte);
+  TEST_ASSERT_EQUAL_UINT(0, request.target.valid_byte);
+  TEST_ASSERT_NOT_NULL(request.target.data);
 
-  /* Mock a request. Path uses the split scratchpad above. */
-  request.path.valid_byte = strlen("/foo") + 1;
-  memcpy(request.path.data, "/foo", strlen("/foo") + 1);
+  /* Mock a request. Target uses the split scratchpad above. */
+  request.target.valid_byte = strlen("/foo") + 1;
+  memcpy(request.target.data, "/foo", strlen("/foo") + 1);
   request.op = TINYWOT_OPERATION_TYPE_READPROPERTY;
   request.content = &scratchpad;
 
