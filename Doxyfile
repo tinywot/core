@@ -9,6 +9,7 @@ TAB_SIZE = 2
 OPTIMIZE_OUTPUT_FOR_C = YES
 INPUT = README.md include src
 USE_MDFILE_AS_MAINPAGE = README.md
+EXTRACT_STATIC = YES
 
 # Prevent compiler attributes confusing Doxygen
 # https://www.doxygen.nl/manual/preprocessing.html

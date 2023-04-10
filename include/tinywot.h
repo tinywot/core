@@ -130,10 +130,10 @@ static inline bool tinywot_is_success(int r) { return r > 0; }
 */
 struct tinywot_scratchpad {
   /*!
-    \brief A flag indicating whether `::data` is writable or not.
+    \brief A flag indicating whether `data` is writable or not.
 
     This helps preventing accidental write to a constant, provided that this
-    field is checked before attempting to write into `::data`.
+    field is checked before attempting to write into `data`.
   */
   bool read_write;
 
@@ -154,14 +154,14 @@ struct tinywot_scratchpad {
   uint16_t type_hint;
 
   /*!
-    \brief The full size of memory pointed by `::data`, in bytes.
+    \brief The full size of memory pointed by `data`, in bytes.
   */
   size_t size_byte;
 
   /*!
-    \brief The actual meaningful size of content pointed by `::data`, in bytes.
+    \brief The actual meaningful size of content pointed by `data`, in bytes.
 
-    For example, if `::data` points to a string `"hello"`, then this should
+    For example, if `data` points to a string `"hello"`, then this should
     be 6 (including the terminal `NUL` character).
   */
   size_t valid_byte;
@@ -170,24 +170,24 @@ struct tinywot_scratchpad {
     \brief A pointer to a segment of memory described by the other fields in
     this structure.
 
-    If `::size_byte` is `0`, then this field can be `NULL`.
+    If `size_byte` is `0`, then this field can be `NULL`.
   */
   uint8_t *data;
 
   /*!
-    \brief Load data to the memory pointed by `::data`.
+    \brief Load data to the memory pointed by `data`.
 
     This provides a way for data producers to lazily supply data to a consumer.
     Setting this function pointer to non-`NULL` hints the use of such mechanism.
-    The implementation of this function should load data to `::data` according
+    The implementation of this function should load data to `data` according
     to `cursor`, the meaning of which is opaque to the caller, but `0` should be
     the starting point, and should be set by the caller before the 1st call.
-    After updating `::data`, `cursor` should be updated to indicate the next
+    After updating `data`, `cursor` should be updated to indicate the next
     available chunk of data.
 
     \param[inout] self This scratchpad (although any one works).
     \param[inout] cursor An indicator of the starting point of memory that will
-    be loaded and pointed by `::data`.
+    be loaded and pointed by `data`.
     \return \ref tinywot_status
   */
   int (*update)(struct tinywot_scratchpad *self, size_t *cursor);
@@ -427,7 +427,7 @@ struct tinywot_request {
   /*!
     \brief The submission target extracted from the request.
 
-    The use of a scratchpad here is because it could be sliced from `::content`
+    The use of a scratchpad here is because it could be sliced from `content`
     to use a single space provided by the user.
 
     \sa `tinywot_scratchpad_split()`
@@ -487,7 +487,7 @@ struct tinywot_form {
     For a top-level form, this field should be set to `NULL`.
 
     This field is so far informative only -- no procedure relies on its value.
-    The form handler (`::handler`) may inspect this field via its `form`
+    The form handler (`handler`) may inspect this field via its `form`
     parameter.
   */
   char const *name;
@@ -520,7 +520,7 @@ struct tinywot_form {
   tinywot_form_handler_t *handler;
 
   /*!
-    \brief Arbitrary data to pass to `::handler` when it is called.
+    \brief Arbitrary data to pass to `handler` when it is called.
   */
   void *user_data;
 };
@@ -530,17 +530,17 @@ struct tinywot_form {
 */
 struct tinywot_thing {
   /*!
-    \brief A flag indicating whether `::forms` is writable or not.
+    \brief A flag indicating whether `forms` is writable or not.
 
     This helps preventing accidental write to a constant, provided that this
-    field is checked before attempting to write into `::forms`.
+    field is checked before attempting to write into `forms`.
   */
   bool read_write;
 
-  /*! \brief The number of registered forms in `::forms`. */
+  /*! \brief The number of registered forms in `forms`. */
   size_t forms_count_n;
 
-  /*! \brief The maximum number of forms in `::forms`. */
+  /*! \brief The maximum number of forms in `forms`. */
   size_t forms_max_n;
 
   /*! \brief A list of forms describing behaviors of this Thing. */
