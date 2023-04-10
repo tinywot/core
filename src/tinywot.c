@@ -8,6 +8,7 @@
   \brief TinyWoT public API implementations.
 */
 
+#include <stdbool.h>
 #include <string.h>
 
 #include <tinywot.h>
@@ -38,7 +39,7 @@ int tinywot_scratchpad_split(
   memset(right, 0, sizeof(struct tinywot_scratchpad));
 
   /* We've checked this above, so right must be R/W. */
-  right->read_write = 1u;
+  right->read_write = true;
 
   /* Copy the type hint. */
   right->type_hint = left->type_hint;
@@ -67,7 +68,7 @@ void tinywot_thing_initialize_with_forms(
 )
 {
   memset(self, 0, sizeof(struct tinywot_thing));
-  /* self->read_write = 0; */ /* it already is */
+  /* self->read_write = false; */ /* it already is */
   self->forms_count_n = forms_size_n;
   self->forms_max_n = forms_size_n;
   self->forms = forms;
@@ -78,7 +79,7 @@ void tinywot_thing_initialize_with_memory(
 )
 {
   memset(self, 0, sizeof(struct tinywot_thing));
-  self->read_write = 1;
+  self->read_write = true;
   /* self->forms_count_n = 0; */ /* it already is */
   self->forms_max_n = memory_size_byte / sizeof(struct tinywot_form);
   self->forms = memory;
