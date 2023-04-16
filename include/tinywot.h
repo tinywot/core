@@ -63,20 +63,20 @@ extern "C" {
 
   This is used to indicate an error without specifying a reason.
 */
-#define TINYWOT_ERROR_GENERAL 0
+#define TINYWOT_ERROR_GENERAL (0)
 
 /*!
   \brief Success.
 
   This is not an error.
 */
-#define TINYWOT_SUCCESS 1
+#define TINYWOT_SUCCESS (1)
 
 /*!
   \brief Check if a status code indicates an error.
 
   \param[in] r An integer.
-  \return `1` if `r` is an error, `0` if it is not.
+  \return `true` if `r` is an error, `false` if it is a success.
 */
 static inline bool tinywot_is_error(int r) { return r <= 0; }
 
@@ -84,7 +84,7 @@ static inline bool tinywot_is_error(int r) { return r <= 0; }
   \brief Check if a status code indicates a success.
 
   \param[in] r An integer.
-  \return `1` if `r` is a success, `0` if it is not.
+  \return `true` if `r` is a success, `false` if it is an error.
 */
 static inline bool tinywot_is_success(int r) { return r > 0; }
 
@@ -120,7 +120,7 @@ static inline bool tinywot_is_success(int r) { return r > 0; }
   https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats
   [RFC7252]: https://www.rfc-editor.org/rfc/rfc7252.html
 */
-#define TINYWOT_CONTENT_TYPE_UNKNOWN 65535
+#define TINYWOT_CONTENT_TYPE_UNKNOWN (65535)
 
 /*!
   \brief A segment of memory with metadata.
@@ -151,7 +151,7 @@ struct tinywot_scratchpad {
     [CoAP Content-Formats]:
     https://www.iana.org/assignments/core-parameters/core-parameters.xhtml#content-formats
   */
-  uint16_t type_hint;
+  uint_least16_t type_hint;
 
   /*!
     \brief The full size of memory pointed by `data`, in bytes.
@@ -172,7 +172,7 @@ struct tinywot_scratchpad {
 
     If `size_byte` is `0`, then this field can be `NULL`.
   */
-  uint8_t *data;
+  unsigned char *data;
 
   /*!
     \brief Load data to the memory pointed by `data`.
@@ -191,16 +191,45 @@ struct tinywot_scratchpad {
     \return \ref tinywot_status
   */
   int (*update)(struct tinywot_scratchpad *self, size_t *cursor);
+
+  /*!
+    \brief Free the dynamically allocated memory pointed by `data`.
+
+    This is only useful when `data` points to a dynamically-allocated memory.
+    Usually, people do not do this on resource-constrained devices, but we do
+    not prevent this either.
+
+    This function should free the occupied memory and reset variables in `self`.
+
+    \param[inout] self This scratchpad (although any one works).
+  */
+  void (*free)(struct tinywot_scratchpad *self);
 };
+
+/*!
+  \brief Initialize a scratchpad.
+
+  This function is designed to be used on a pointer to an existing scratchpad,
+  setting `tinywot_scratchpad::type_hint` to `TINYWOT_CONTENT_TYPE_UNKNOWN`:
+
+  ```
+  struct tinywot_scratchpad sp;
+  tinywot_scratchpad_initialize(&sp);
+  ```
+
+  \param[inout] self A pointer to a scratchpad.
+  \sa `tinywot_scratchpad_new()`
+*/
+void tinywot_scratchpad_initialize(struct tinywot_scratchpad *self);
 
 /*!
   \brief Create a new scratchpad.
 
   This inline function is designed for scratchpad variable initialization,
-  setting `tinywot_scratchpad::type_hint` to `TINYWOT_CONTENT_TYPE_UNKNOWN`.
+  setting `tinywot_scratchpad::type_hint` to `TINYWOT_CONTENT_TYPE_UNKNOWN`:
 
-  ```c
-  struct tinywot_scratchpad scratchpad = tinywot_scratchpad_new();
+  ```
+  struct tinywot_scrachpad sp = tinywot_scratchpad_new();
   ```
 
   \return An initialized scratchpad.
@@ -212,22 +241,6 @@ static inline struct tinywot_scratchpad tinywot_scratchpad_new(void)
     .type_hint = TINYWOT_CONTENT_TYPE_UNKNOWN,
   };
 }
-
-/*!
-  \brief Initialize a scratchpad.
-
-  This function is designed to be used on a pointer to an existing scratchpad,
-  setting `tinywot_scratchpad::type_hint` to `TINYWOT_CONTENT_TYPE_UNKNOWN`.
-
-  ```c
-  struct tinywot_scratchpad scratchpad;
-  tinywot_scratchpad_initialize(&scratchpad);
-  ```
-
-  \param[inout] self A pointer to a scratchpad.
-  \sa `tinywot_scratchpad_new()`
-*/
-void tinywot_scratchpad_initialize(struct tinywot_scratchpad *self);
 
 /*!
   \brief Split a scratchpad into two halves.
@@ -247,7 +260,7 @@ void tinywot_scratchpad_initialize(struct tinywot_scratchpad *self);
   \param[inout] left The scratchpad to be split, as well as the left-hand-side
   scratchpad to create after the split.
   \param[inout] right The right-hand-side scratchpad to create after the split.
-  \param[inout] to_split_byte How much memory should be sliced out of `left`, in
+  \param[in] to_split_byte How much memory should be sliced out of `left`, in
   bytes.
   \return \ref tinywot_status
 */
@@ -260,144 +273,176 @@ int tinywot_scratchpad_split(
 /*! \} */ /* defgroup tinywot_scratchpad */
 
 /*!
+  \defgroup tinywot_operation_types Operation Types
+
+  An operation type is a "semantic intention" of a request, according to the
+  Thing Description specification.
+
+  In TinyWoT, they are either used in a [Response] to indicate the incoming
+  operation type, or in a [Form] to specify allowed operation types to the
+  submission target.
+
+  Operation types are bit-masks. Multiple operation types can thus be combined
+  together with bitwise OR (`|`). For example, to specify a read-write property,
+  write:
+
+  ```
+  uint_least32_t op =
+    TINYWOT_OPERATION_TYPE_READPROPERTY | TINYWOT_OPERATION_TYPE_WRITEPROPERTY
+  ```
+
+  A full list of operation types can be found at [&sect; 5.3.4.2 Form, the
+  Web of Things (WoT) Thing Description][td-5.3.4.2]. So far, TinyWoT only
+  supports a subset of them.
+
+  TinyWoT defines two extra operation types, but they are special values, and
+  are not in the specification:
+
+  - `TINYWOT_OPERATION_TYPE_UNKNOWN` is an uninitialized variable. It is invalid
+    to use this value.
+  - `TINYWOT_OPERATION_TYPE_ALL` represents all operation types. Because
+    operation types in TinyWoT are bit-masks, this is an all-1 mask for use in
+    `tinywot_form` to create a target without limiting its acceptable operation
+    type.
+
+  [Response]: \ref tinywot_response
+  [Form]: \ref tinywot_form
+  [td-5.3.4.2]:
+  https://www.w3.org/TR/2020/REC-wot-thing-description-20200409/#form
+
+  \{
+*/
+
+/*!
+  \brief An unknown or uninitialized opeartion type.
+*/
+#define TINYWOT_OPERATION_TYPE_UNKNOWN (UINT32_C(0))
+
+/*!
+  \brief "Identifies the read operation on Property Affordances to retrieve
+  the corresponding data."
+*/
+#define TINYWOT_OPERATION_TYPE_READPROPERTY (UINT32_C(1))
+
+/*!
+  \brief "Identifies the write operation on Property Affordances to update the
+  corresponding data."
+*/
+#define TINYWOT_OPERATION_TYPE_WRITEPROPERTY (UINT32_C(1) << 1)
+
+/*!
+  \brief "Identifies the observe operation on Property Affordances to be
+  notified with the new data when the Property is updated."
+*/
+#define TINYWOT_OPERATION_TYPE_OBSERVEPROPERTY (UINT32_C(1) << 2)
+
+/*!
+  \brief "Identifies the unobserve operation on Property Affordances to stop
+  the corresponding notifications."
+*/
+#define TINYWOT_OPERATION_TYPE_UNOBSERVEPROPERTY (UINT32_C(1) << 3)
+
+/*!
+  \brief "Identifies the invoke operation on Action Affordances to perform
+  the corresponding action."
+*/
+#define TINYWOT_OPERATION_TYPE_INVOKEACTION (UINT32_C(1) << 4)
+
+/*!
+  \brief "Identifies the querying operation on Action Affordances to get the
+  status of the corresponding action."
+*/
+#define TINYWOT_OPERATION_TYPE_QUERYACTION (UINT32_C(1) << 5)
+
+/*!
+  \brief "Identifies the cancel operation on Action Affordances to cancel the
+  ongoing corresponding action."
+*/
+#define TINYWOT_OPERATION_TYPE_CANCELACTION (UINT32_C(1) << 6)
+
+/*!
+  \brief "Identifies the subscribe operation on Event Affordances to be
+  notified by the Thing when the event occurs."
+*/
+#define TINYWOT_OPERATION_TYPE_SUBSCRIBEEVENT (UINT32_C(1) << 7)
+
+/*!
+  \brief "Identifies the unsubscribe operation on Event Affordances to stop
+  the corresponding notifications."
+*/
+#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBEEVENT (UINT32_C(1) << 8)
+
+/*!
+  \brief "Identifies the readallproperties operation on a Thing to retrieve
+  the data of all Properties in a single interaction."
+*/
+#define TINYWOT_OPERATION_TYPE_READALLPROPERTIES (UINT32_C(1) << 9)
+
+/*!
+  \brief "Identifies the writeallproperties operation on a Thing to update the
+  data of all writable Properties in a single interaction."
+*/
+#define TINYWOT_OPERATION_TYPE_WRITEALLPROPERTIES (UINT32_C(1) << 10)
+
+/*!
+  \brief "Identifies the readmultipleproperties operation on a Thing to
+  retrieve the data of selected Properties in a single interaction."
+*/
+#define TINYWOT_OPERATION_TYPE_READMULTIPLEPROPERTIES (UINT32_C(1) << 11)
+
+/*!
+  \brief "Identifies the writemultipleproperties operation on a Thing to
+  update the data of selected writable Properties in a single interaction."
+*/
+#define TINYWOT_OPERATION_TYPE_WRITEMULTIPLEPROPERTIES (UINT32_C(1) << 12)
+
+/*!
+  \brief "Identifies the observeallproperties operation on Properties to be
+  notified with new data when any Property is updated."
+*/
+#define TINYWOT_OPERATION_TYPE_OBSERVEALLPROPERTIES (UINT32_C(1) << 13)
+
+/*!
+  \brief "Identifies the unobserveallproperties operation on Properties to
+  stop notifications from all Properties in a single interaction."
+*/
+#define TINYWOT_OPERATION_TYPE_UNOBSERVEALLPROPERTIES (UINT32_C(1) << 14)
+
+/*!
+  \brief "Identifies the queryallactions operation on a Thing to get the
+  status of all Actions in a single interaction."
+*/
+#define TINYWOT_OPERATION_TYPE_QUERYALLACTIONS (UINT32_C(1) << 15)
+
+/*!
+  \brief "Identifies the subscribeallevents operation on Events to subscribe
+  to notifications from all Events in a single interaction."
+*/
+#define TINYWOT_OPERATION_TYPE_SUBSCRIBEALLEVENTS (UINT32_C(1) << 16)
+
+/*!
+  \brief "Identifies the unsubscribeallevents operation on Events to
+  unsubscribe from notifications from all Events in a single interaction."
+*/
+#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBEALLEVENTS (UINT32_C(1) << 17)
+
+/*!
+  \brief All of the operation types defined in the library.
+*/
+#define TINYWOT_OPERATION_TYPE_ALL (~UINT32_C(0))
+
+/*! \} */ /* defgroup tinywot_operation_types */
+
+/*!
   \defgroup tinywot_req_and_res Requests and Responses
 
   \{
 */
 
 /*!
-  \brief "Semantic intention" of a request according to the Thing
-  Description.
-
-  A full list of operation types can be found at [&sect; 5.3.4.2 Form, the
-  Web of Things (WoT) Thing Description][td-5.3.4.2]. So far, TinyWoT only
-  supports a subset of them.
-
-  `::TINYWOT_OPERATION_TYPE_UNKNOWN` is a special value (`0`) indicating an
-  uninitialized operation type. TinyWoT treats this value as an error.
-
-  [td-5.3.4.2]:
-  https://www.w3.org/TR/2020/REC-wot-thing-description-20200409/#form
-*/
-enum tinywot_operation_type {
-  /*!
-    \brief An unknown or uninitialized opeartion type.
-  */
-  TINYWOT_OPERATION_TYPE_UNKNOWN = 0,
-
-  /*!
-    \brief "Identifies the read operation on Property Affordances to retrieve
-    the corresponding data."
-  */
-  TINYWOT_OPERATION_TYPE_READPROPERTY,
-
-  /*!
-    \brief "Identifies the write operation on Property Affordances to update the
-    corresponding data."
-  */
-  TINYWOT_OPERATION_TYPE_WRITEPROPERTY,
-
-  /*!
-    \brief "Identifies the observe operation on Property Affordances to be
-    notified with the new data when the Property is updated."
-  */
-  TINYWOT_OPERATION_TYPE_OBSERVEPROPERTY,
-
-  /*!
-    \brief "Identifies the unobserve operation on Property Affordances to stop
-    the corresponding notifications."
-  */
-  TINYWOT_OPERATION_TYPE_UNOBSERVEPROPERTY,
-
-  /*!
-    \brief "Identifies the invoke operation on Action Affordances to perform
-    the corresponding action."
-  */
-  TINYWOT_OPERATION_TYPE_INVOKEACTION,
-
-  /*!
-    \brief "Identifies the querying operation on Action Affordances to get the
-    status of the corresponding action."
-  */
-  TINYWOT_OPERATION_TYPE_QUERYACTION,
-
-  /*!
-    \brief "Identifies the cancel operation on Action Affordances to cancel the
-    ongoing corresponding action."
-  */
-  TINYWOT_OPERATION_TYPE_CANCELACTION,
-
-  /*!
-    \brief "Identifies the subscribe operation on Event Affordances to be
-    notified by the Thing when the event occurs."
-  */
-  TINYWOT_OPERATION_TYPE_SUBSCRIBEEVENT,
-
-  /*!
-    \brief "Identifies the unsubscribe operation on Event Affordances to stop
-    the corresponding notifications."
-  */
-  TINYWOT_OPERATION_TYPE_UNSUBSCRIBEEVENT,
-
-  /*!
-    \brief "Identifies the readallproperties operation on a Thing to retrieve
-    the data of all Properties in a single interaction."
-  */
-  TINYWOT_OPERATION_TYPE_READALLPROPERTIES,
-
-  /*!
-    \brief "Identifies the writeallproperties operation on a Thing to update the
-    data of all writable Properties in a single interaction."
-  */
-  TINYWOT_OPERATION_TYPE_WRITEALLPROPERTIES,
-
-  /*!
-    \brief "Identifies the readmultipleproperties operation on a Thing to
-    retrieve the data of selected Properties in a single interaction."
-  */
-  TINYWOT_OPERATION_TYPE_READMULTIPLEPROPERTIES,
-
-  /*!
-    \brief "Identifies the writemultipleproperties operation on a Thing to
-    update the data of selected writable Properties in a single interaction."
-  */
-  TINYWOT_OPERATION_TYPE_WRITEMULTIPLEPROPERTIES,
-
-  /*!
-    \brief "Identifies the observeallproperties operation on Properties to be
-    notified with new data when any Property is updated."
-  */
-  TINYWOT_OPERATION_TYPE_OBSERVEALLPROPERTIES,
-
-  /*!
-    \brief "Identifies the unobserveallproperties operation on Properties to
-    stop notifications from all Properties in a single interaction."
-  */
-  TINYWOT_OPERATION_TYPE_UNOBSERVEALLPROPERTIES,
-
-  /*!
-    \brief "Identifies the queryallactions operation on a Thing to get the
-    status of all Actions in a single interaction."
-  */
-  TINYWOT_OPERATION_TYPE_QUERYALLACTIONS,
-
-  /*!
-    \brief "Identifies the subscribeallevents operation on Events to subscribe
-    to notifications from all Events in a single interaction."
-  */
-  TINYWOT_OPERATION_TYPE_SUBSCRIBEALLEVENTS,
-
-  /*!
-    \brief "Identifies the unsubscribeallevents operation on Events to
-    unsubscribe from notifications from all Events in a single interaction."
-  */
-  TINYWOT_OPERATION_TYPE_UNSUBSCRIBEALLEVENTS
-};
-
-/*!
   \brief Status codes used in a `tinywot_response`.
 
-  `::TINYWOT_RESPONSE_STATUS_UNKNOWN` is a special value (`0`) indicating an
+  `::TINYWOT_RESPONSE_STATUS_UNKNOWN` is a special value indicating an
   uninitialized response status. TinyWoT treats this value as an error.
 */
 enum tinywot_response_status {
@@ -421,31 +466,43 @@ enum tinywot_response_status {
 };
 
 /*!
-  \brief A received request.
+  \brief An incoming network request.
 */
 struct tinywot_request {
   /*!
     \brief The submission target extracted from the request.
 
-    The use of a scratchpad here is because it could be sliced from `content`
-    to use a single space provided by the user.
+    This field is designed to be splitted from the [Scratchpad] supplied by the
+    library user.
 
     \sa `tinywot_scratchpad_split()`
+
+    [Scratchpad]: \ref tinywot_scratchpad
   */
   struct tinywot_scratchpad target;
 
-  /*! \brief The operation type requested. */
-  enum tinywot_operation_type op;
+  /*!
+    \brief The [Operation Type] extracted from the request.
 
-  /*! \brief The payload data sent along with the request. */
+    [Operation Type]: \ref tinywot_operation_types
+  */
+  uint_least32_t op;
+
+  /*!
+    \brief The payload data sent along with the request.
+  */
   struct tinywot_scratchpad *content;
 };
 
 /*!
-  \brief A response to be sent.
+  \brief An outgoing network response.
 */
 struct tinywot_response {
-  /*! \brief A status code for the response. */
+  /*!
+    \brief A status code for the response.
+
+    This is normally calculated from the \ref tinywot_status by the library.
+  */
   enum tinywot_response_status status;
 
   /*! \brief The payload data to send along with the response. */
@@ -460,21 +517,30 @@ struct tinywot_response {
   \{
 */
 
-/* This forward declaration is for `tinywot_form_handler_t`. */
-struct tinywot_form;
-
 /*!
-  \brief Signature of a handler function implementing the behavior of an
-  affordance.
+  \brief Signature of a handler function implementing the behavior of a
+  submission target.
 
-  \param[in] form The form definition triggering the invocation of this
-  function.
-  \param[inout] inout A memory buffer carrying input arguments and output
-  values.
+  \param[in] name The name of affordance specified in a [Form].
+  \param[in] target The submission target of the [Form] that this function is
+  handling.
+  \param[in] op The [Operation Type] of request.
+  \param[inout] content A dual-use [Scratchpad] containing the incoming payload
+  and acting as a buffer for sending response payload.
+  \param[inout] user_data The context information set in the corresponding
+  [Form].
   \return \ref tinywot_status
+
+  [Form]: \ref tinywot_form
+  [Operation Type]: \ref tinywot_operation_types
+  [Scratchpad]: \ref tinywot_scratchpad
 */
 typedef int tinywot_form_handler_t(
-  struct tinywot_form const *form, struct tinywot_scratchpad *inout
+  char const *name,
+  char const *target,
+  uint_least32_t op,
+  struct tinywot_scratchpad *content,
+  void *user_data
 );
 
 /*!
@@ -487,8 +553,8 @@ struct tinywot_form {
     For a top-level form, this field should be set to `NULL`.
 
     This field is so far informative only -- no procedure relies on its value.
-    The form handler (`handler`) may inspect this field via its `form`
-    parameter.
+    The form handler (`handler`) receives this as a parameter, and can use it
+    as a reference.
   */
   char const *name;
 
@@ -510,9 +576,22 @@ struct tinywot_form {
   char const *target;
 
   /*!
-    \brief The allowed operation type on this form.
+    \brief The allowed operation types on this form.
+
+    \ref tinywot_operation_types can be bitwise-ORed here to allow multiple
+    operation types:
+
+    ```
+    form.allowed_ops =
+      TINYWOT_OPERATION_TYPE_READPROPERTY |
+      TINYWOT_OPERATION_TYPE_WRITEPROPERTY;
+    ```
+
+    `TINYWOT_OPERATION_TYPE_ALL` can also be used to indicate that all
+    operations are allowed on this form. See \ref tinywot_operation_types for
+    more details about opeartion types.
   */
-  enum tinywot_operation_type op;
+  uint_least32_t allowed_ops;
 
   /*!
     \brief A function pointer to the actual implementation of the form.
@@ -530,10 +609,10 @@ struct tinywot_form {
 */
 struct tinywot_thing {
   /*!
-    \brief A flag indicating whether `forms` is writable or not.
+    \brief A flag indicating whether the `forms` field is writable or not.
 
-    This helps preventing accidental write to a constant, provided that this
-    field is checked before attempting to write into `forms`.
+    This helps preventing accidental write to a (true) constant, provided that
+    this field is checked before attempting to write into `forms`.
   */
   bool read_write;
 
@@ -578,186 +657,78 @@ void tinywot_thing_initialize_with_memory(
 );
 
 /*!
-  \brief Find and get a form from a Thing.
+  \brief Find and get a [Form] from a [Thing].
 
-  Depending on the supplied arguments:
-
-  - If both `name` and `target` are non-`NULL`, then the first closure with
-  `name` on `target` is returned.
-  - If `name` is non-`NULL`, `target` is `NULL`, then the first closure with
-  `name` is returned.
-  - If `name` is `NULL`, `target` is non-`NULL`, then the first closure on
-  `target` is returned.
-  - If both `name` and `target` are `NULL`, then the first closure allowing `op`
-  is returned.
-
-  In any case, `op` is checked for equality and does not prevent
-  `::TINYWOT_OPERATION_TYPE_UNKNOWN` from being returned.
-
-  \param[in] self A Thing.
-  \param[in] name The name of affordance. This can be found on a corresponding
-  Thing Description.
+  \param[in] self A [Thing].
   \param[in] target The submission target. This can be derived from a
   corresponding Thing Description.
-  \param[in] op The operation type allowed on the handler we are looking for.
-  \param[out] form The form describing the submission target registered to the
-  Thing.
+  \param[in] allowed_ops The operation type(s) allowed on the anticipated form.
+  \param[out] form A pointer to the [Form] that matches conditions.
   \return \ref tinywot_status
-  \sa `tinywot_thing_get_handler()`
+
+  [Form]: \ref tinywot_form
+  [Thing]: \ref tinywot_thing
 */
 int tinywot_thing_get_form(
   struct tinywot_thing const *self,
-  char const *name,
   char const *target,
-  enum tinywot_operation_type op,
+  uint_least32_t allowed_ops,
   struct tinywot_form const **form
 );
 
 /*!
-  \brief Find and get a handler from a Thing.
+  \brief Set a [Form] to a [Thing].
 
-  This is a wrapper on `tinywot_thing_get_form()`. Instead of a `form`, only
-  `handler` and `user_data` are returned in this function. Read the
-  documentation of `tinywot_thing_get_form()` for the behavior of this function.
+  If another form in the [Thing] has its `tinywot_form::target` and
+  `tinywot_form::op` being the same as the supplied one, its contents will be
+  replaced, instead of a new one being inserted into the list directly.
 
-  \param[in] self A Thing.
-  \param[in] name The name of affordance. This can be found on a corresponding
-  Thing Description.
-  \param[in] target The submission target. This can be derived from a
-  corresponding Thing Description.
-  \param[in] op The operation type allowed on the handler we are looking for.
-  \param[out] handler If found, the pointer to the handler function is returned
-  here. Ignore this by setting it to `NULL`.
-  \param[out] user_data The arbitrary data associated to `handler`, usually
-  used to form a closure. Ignore this by setting it to `NULL`.
+  \param[in] self A [Thing].
+  \param[inout] form The [Form] to be registered to the [Thing].
   \return \ref tinywot_status
-  \sa `tinywot_thing_get_handler_by_name()`,
-  `tinywot_thing_get_handler_by_target()`
+
+  [Form]: \ref tinywot_form
+  [Thing]: \ref tinywot_thing
 */
-int tinywot_thing_get_handler(
-  struct tinywot_thing const *self,
-  char const *name,
-  char const *target,
-  enum tinywot_operation_type op,
-  tinywot_form_handler_t **handler,
-  void **user_data
+int tinywot_thing_set_form(
+  struct tinywot_thing const *self, struct tinywot_form const *form
 );
 
 /*!
-  \brief Find and get a handler from a Thing according to the affordance name.
+  \brief Perform an operation on a [Thing].
 
-  This is a convenience wrapper on `tinywot_thing_get_handler()` without the
-  `target` parameter.
-
-  \param[in] self A Thing.
-  \param[in] name The name of affordance. This can be found on a corresponding
-  Thing Description.
-  \param[in] op The operation type allowed on the handler we are looking for.
-  \param[out] handler If found, the pointer to the handler function is returned
-  here. Ignore this by setting it to `NULL`.
-  \param[out] user_data The arbitrary data associated to `handler`, usually
-  used to form a closure. Ignore this by setting it to `NULL`.
-  \return \ref tinywot_status
-  \sa `tinywot_thing_get_handler()`, `tinywot_thing_get_handler_by_target()`
-*/
-static inline int tinywot_thing_get_handler_by_name(
-  struct tinywot_thing const *self,
-  char const *name,
-  enum tinywot_operation_type op,
-  tinywot_form_handler_t **handler,
-  void **user_data
-)
-{
-  return tinywot_thing_get_handler(self, name, NULL, op, handler, user_data);
-}
-
-/*!
-  \brief Find and get a handler from a Thing according to the affordance name.
-
-  This is a convenience wrapper on `tinywot_thing_get_handler()` without the
-  `name` parameter.
+  This function first invokes `tinywot_thing_get_form()` to find a matching
+  submission target, then try to invoke the handler of it.
 
   \param[in] self A Thing.
-  \param[in] target The target name in IRI described on a corresponding Thing
-  Description (in `href`).
-  \param[in] op The operation type allowed on the handler we are looking for.
-  \param[out] handler If found, the pointer to the handler function is returned
-  here. Ignore this by setting it to `NULL`.
-  \param[out] user_data The arbitrary data associated to `handler`, usually
-  used to form a closure. Ignore this by setting it to `NULL`.
-  \return \ref tinywot_status
-  \sa `tinywot_thing_get_handler()`, `tinywot_thing_get_handler_by_name()`
-*/
-static inline int tinywot_thing_get_handler_by_target(
-  struct tinywot_thing const *self,
-  char const *target,
-  enum tinywot_operation_type op,
-  tinywot_form_handler_t **handler,
-  void **user_data
-)
-{
-  return tinywot_thing_get_handler(self, NULL, target, op, handler, user_data);
-}
-
-/*!
-  \brief Set a handler on an affordance.
-
-  \param[inout] self A Thing.
-  \param[in] name The name of affordance. This can be found on a corresponding
-  Thing Description.
-  \param[in] target The submission target. This can be derived from a
-  corresponding Thing Description.
-  \param[in] op The operation type allowed on the handler we are looking for.
-  \param[out] handler If found, the pointer to the handler function is returned
-  here. If this is `NULL`, then this is not returned.
-  \param[out] user_data The arbitrary data associated to `handler`, usually
-  forming a closure.
-  \return \ref tinywot_status
-  \sa `tinywot_thing`, `tinywot_form`
-*/
-int tinywot_thing_set_handler(
-  struct tinywot_thing *self,
-  char const *name,
-  char const *target,
-  enum tinywot_operation_type op,
-  tinywot_form_handler_t *handler,
-  void *user_data
-);
-
-/*!
-  \brief Perform an operation on a Thing.
-
-  The function invokes `tinywot_thing_get_handler()` first to find a handler
-  based on `name`, `target` and `op`. As a result, they are optional. See the
-  documentation of `tinywot_thing_get_handler()` for a detailed behavior of this
-  function.
-
-  \param[in] self A Thing.
-  \param[in] name The name of affordance. This can be found on a corresponding
-  Thing Description.
   \param[in] target The submission target. This can be derived from a
   corresponding Thing Description.
   \param[in] op The operation type allowed on the handler we are looking for.
   \param[inout] inout A buffer to supply to the invoked handler function for it
   to use as both a parameter input buffer and a return output buffer.
   \return \ref tinywot_status
-  \sa `tinywot_thing_get_handler()`
+
+  [Form]: \ref tinywot_form
+  [Thing]: \ref tinywot_thing
 */
 int tinywot_thing_do(
   struct tinywot_thing const *self,
-  char const *name,
   char const *target,
-  enum tinywot_operation_type op,
+  uint_least32_t op,
   struct tinywot_scratchpad *inout
 );
 
 /*!
-  \brief Transform a Request into a Response with a Thing.
+  \brief Process a [Request] transforming it into a [Response] with a [Thing].
 
-  \param[in] self A Thing.
-  \param[in] request A received request.
-  \param[out] response A response ready to be sent.
+  \param[in] self A [Thing].
+  \param[in] request A [Request].
+  \param[out] response A [Response].
   \return \ref tinywot_status
+
+  [Request]: \ref tinywot_request
+  [Response]: \ref tinywot_response
+  [Thing]: \ref tinywot_thing
 */
 int tinywot_thing_process_request(
   struct tinywot_thing const *self,
@@ -784,7 +755,7 @@ int tinywot_thing_process_request(
 
   \todo Clarify behavior.
 
-  \param[inout] buffer A pointer pointing to a valid region of memory.
+  \param[out] buffer A pointer pointing to a valid region of memory.
   \param[in] to_read_byte The number of bytes to read and place to `buffer`.
   \param[out] read_byte The number of bytes that have actually been read.
   \return \ref tinywot_status
@@ -838,31 +809,31 @@ struct tinywot_io {
 */
 
 /*!
-  \brief Signature of a function producing a `tinywot_request` using
-  \ref tinywot_io functions.
+  \brief A function that reads with [I/O functions] and produces a [Request].
 
-  \param[inout] request A valid pointer to a `tinywot_request` storing the
-  received network request.
-  \param[in] io A `tinywot_io` containing a read function and a write function.
+  \param[inout] request A pointer to a valid [Request].
+  \param[in] io [I/O functions].
   \return \ref tinywot_status
-  \sa \ref tinywot_io
+
+  [Request]: \ref tinywot_request
+  [I/O functions]: \ref tinywot_io
 */
 typedef int tinywot_protocol_receive_function_t(
   struct tinywot_request *request, struct tinywot_io const *io
 );
 
 /*!
-  \brief Signature of a function producing a `tinywot_response` using
-  \ref tinywot_io functions.
+  \brief A function that writes with [I/O functions] and a [Response].
 
-  \param[in] response A valid pointer to a `tinywot_response` storing the
-  network response to be sent.
-  \param[in] io A `tinywot_io` containing a read function and a write function.
+  \param[inout] response A pointer to a valid [Response].
+  \param[in] io [I/O functions].
   \return \ref tinywot_status
-  \sa \ref tinywot_io
+
+  [Response]: \ref tinywot_response
+  [I/O functions]: \ref tinywot_io
 */
 typedef int tinywot_protocol_send_function_t(
-  struct tinywot_response const *response, struct tinywot_io const *io
+  struct tinywot_response *response, struct tinywot_io const *io
 );
 
 /*!
@@ -908,11 +879,13 @@ struct tinywot_servient {
 };
 
 /*!
-  \brief Run the service routine of Servient once.
+  \brief Run the Thing's service routine once.
 
-  \param[in] self A `tinywot_servient` instance.
+  \param[in] self A [Servient] instance.
   \param[in] scratchpad A segment of memory for successive procedures to use.
   \return \ref tinywot_status
+
+  [Servient]: \ref tinywot_servient
 */
 int tinywot_servient_process(
   struct tinywot_servient const *self, struct tinywot_scratchpad *scratchpad

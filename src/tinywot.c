@@ -87,153 +87,29 @@ void tinywot_thing_initialize_with_memory(
 
 int tinywot_thing_get_form(
   struct tinywot_thing const *self,
-  char const *name,
   char const *target,
-  enum tinywot_operation_type op,
+  uint_least32_t allowed_ops,
   struct tinywot_form const **form
 )
 {
-  struct tinywot_form const *form_i_p = NULL;
-
-  for (size_t form_i = 0; form_i < self->forms_count_n; form_i += 1) {
-    form_i_p = &self->forms[form_i];
-
-    /* This filters out any non-matching ops. */
-    if (form_i_p->op != op) {
-      continue;
-    }
-
-    /* This filters out any non-matching names, if one is supplied. */
-    if (name) {
-      if (strcmp(form_i_p->name, name) != 0) {
-        continue;
-      }
-    }
-
-    /* This filters out any non-matching target, if one is supplied. */
-    if (target) {
-      if (strcmp(form_i_p->target, target) != 0) {
-        continue;
-      }
-    }
-
-    /* At this point, every matching condition has been met.
-
-       A user can choose to not retrieve the pointer if they only want to
-       know whether the form exists (by checking the return code). */
-    if (form) {
-      *form = form_i_p;
-    }
-
-    return TINYWOT_SUCCESS;
-  }
-
-  /* At this point, nothing has been found by the loop, as it didn't exit
-     early. */
-  return TINYWOT_ERROR_NOT_FOUND;
+  return TINYWOT_ERROR_NOT_IMPLEMENTED;
 }
 
-int tinywot_thing_get_handler(
-  struct tinywot_thing const *self,
-  char const *name,
-  char const *target,
-  enum tinywot_operation_type op,
-  tinywot_form_handler_t **handler,
-  void **user_data
+int tinywot_thing_set_form(
+  struct tinywot_thing const *self, struct tinywot_form const *form
 )
 {
-  struct tinywot_form const *form = NULL;
-  int r = 0;
-
-  r = tinywot_thing_get_form(self, name, target, op, &form);
-  if (tinywot_is_error(r)) {
-    return r;
-  }
-
-  /* A user can choose to not retrieve the pointer if they only want to know
-     whether the form exists (by checking the return code). */
-
-  if (handler) {
-    *handler = form->handler;
-  }
-
-  if (user_data) {
-    *user_data = form->user_data;
-  }
-
-  return TINYWOT_SUCCESS;
-}
-
-int tinywot_thing_set_handler(
-  struct tinywot_thing *self,
-  char const *name,
-  char const *target,
-  enum tinywot_operation_type op,
-  tinywot_form_handler_t *handler,
-  void *user_data
-)
-{
-  size_t form_i = 0;
-
-  /* NOTE: We cast away the const qualification here, but `self->read_write` is
-     already in place to maintain the writability. This is exception
-     EXP05-C-EX3 in SEI CERT. Ignoring this check here. */
-  /* cppcheck-suppress cert-EXP05-C */
-  struct tinywot_form *form_i_p = (struct tinywot_form *)self->forms;
-
-  /* Check R/W before doing anything. */
-  if (!self->read_write) {
-    return TINYWOT_ERROR_NOT_ALLOWED;
-  }
-
-  /* This loop goes through already registered forms to see if any could be just
-     replaced with the supplied new closure. If it doesn't return inside the
-     loop, then form_i and form_i_p retain respectively to be an index and a
-     pointer to the last available slot in the Thing. */
-  for (; form_i < self->forms_count_n; form_i += 1, form_i_p += 1) {
-    if (strcmp(form_i_p->name, name) == 0 && form_i_p->op == op) {
-      form_i_p->handler = handler;
-      form_i_p->user_data = user_data;
-
-      return TINYWOT_SUCCESS;
-    }
-  }
-
-  /* At this point there shouldn't be an existing entry, but what if we've run
-     out of memory. */
-  if (form_i >= self->forms_max_n) {
-    return TINYWOT_ERROR_NOT_ENOUGH_MEMORY;
-  }
-
-  /* Now we add a new entry. */
-  self->forms_count_n += 1;
-
-  form_i_p->name = name;
-  form_i_p->target = target;
-  form_i_p->op = op;
-  form_i_p->handler = handler;
-  form_i_p->user_data = user_data;
-
-  return TINYWOT_SUCCESS;
+  return TINYWOT_ERROR_NOT_IMPLEMENTED;
 }
 
 int tinywot_thing_do(
   struct tinywot_thing const *self,
-  char const *name,
   char const *target,
-  enum tinywot_operation_type op,
+  uint_least32_t op,
   struct tinywot_scratchpad *inout
 )
 {
-  struct tinywot_form const *form = NULL;
-  int r = TINYWOT_ERROR_GENERAL;
-
-  r = tinywot_thing_get_form(self, name, target, op, &form);
-  if (tinywot_is_error(r)) {
-    return r;
-  }
-
-  return form->handler(form, inout);
+  return TINYWOT_ERROR_NOT_IMPLEMENTED;
 }
 
 int tinywot_thing_process_request(
@@ -244,14 +120,8 @@ int tinywot_thing_process_request(
 {
   int status = TINYWOT_ERROR_GENERAL;
 
-  /* Because a request is not aware of affordance names, here only target is
-     used to find and run a handler. */
   status = tinywot_thing_do(
-    self,
-    NULL,
-    (char const *)request->target.data,
-    request->op,
-    request->content
+    self, (char const *)request->target.data, request->op, request->content
   );
 
   /* Map TinyWoT status codes to Response status codes. */
