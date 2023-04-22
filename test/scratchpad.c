@@ -7,8 +7,7 @@
 #include <tinywot.h>
 #include <unity.h>
 
-void test_tinywot_scratchpad_initialize_normal(void)
-{
+void test_tinywot_scratchpad_initialize_normal(void) {
   struct tinywot_scratchpad scratchpad;
 
   tinywot_scratchpad_initialize(&scratchpad);
@@ -21,8 +20,7 @@ void test_tinywot_scratchpad_initialize_normal(void)
   TEST_ASSERT_NULL(scratchpad.update);
 }
 
-void test_tinywot_scratchpad_split_normal(void)
-{
+void test_tinywot_scratchpad_split_normal(void) {
   struct tinywot_scratchpad scratchpad_1 = tinywot_scratchpad_new();
   struct tinywot_scratchpad scratchpad_2 = tinywot_scratchpad_new();
   void *memory = malloc(256);
@@ -58,8 +56,7 @@ void test_tinywot_scratchpad_split_normal(void)
   free(memory);
 }
 
-void test_tinywot_scratchpad_split_left_read_only(void)
-{
+void test_tinywot_scratchpad_split_left_read_only(void) {
   struct tinywot_scratchpad scratchpad_1 = tinywot_scratchpad_new();
   struct tinywot_scratchpad scratchpad_2 = tinywot_scratchpad_new();
   void *memory = malloc(256);
@@ -98,8 +95,7 @@ void test_tinywot_scratchpad_split_left_read_only(void)
   free(memory);
 }
 
-void test_tinywot_scratchpad_split_right_read_only(void)
-{
+void test_tinywot_scratchpad_split_right_read_only(void) {
   struct tinywot_scratchpad scratchpad_1 = tinywot_scratchpad_new();
   struct tinywot_scratchpad scratchpad_2 = tinywot_scratchpad_new();
   void *memory = malloc(256);
@@ -138,8 +134,7 @@ void test_tinywot_scratchpad_split_right_read_only(void)
   free(memory);
 }
 
-void test_tinywot_scratchpad_split_not_enough_size(void)
-{
+void test_tinywot_scratchpad_split_not_enough_size(void) {
   struct tinywot_scratchpad scratchpad_1 = tinywot_scratchpad_new();
   struct tinywot_scratchpad scratchpad_2 = tinywot_scratchpad_new();
   void *memory = malloc(32);
@@ -178,8 +173,7 @@ void test_tinywot_scratchpad_split_not_enough_size(void)
   free(memory);
 }
 
-void test_tinywot_scratchpad_split_not_enough_valid(void)
-{
+void test_tinywot_scratchpad_split_not_enough_valid(void) {
   struct tinywot_scratchpad scratchpad_1 = tinywot_scratchpad_new();
   struct tinywot_scratchpad scratchpad_2 = tinywot_scratchpad_new();
   void *memory = malloc(256);

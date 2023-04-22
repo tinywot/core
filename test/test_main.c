@@ -17,11 +17,10 @@ void test_tinywot_scratchpad_split_not_enough_valid(void);
 
 /* These are necessary to keep Unity happy. */
 
-void setUp(void) { }
-void tearDown(void) { }
+void setUp(void) {}
+void tearDown(void) {}
 
-int main(void)
-{
+int main(void) {
   UNITY_BEGIN();
 
   RUN_TEST(test_tinywot_scratchpad_initialize_normal);

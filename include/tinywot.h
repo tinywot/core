@@ -235,9 +235,8 @@ void tinywot_scratchpad_initialize(struct tinywot_scratchpad *self);
   \return An initialized scratchpad.
   \sa `tinywot_scratchpad_initialize()`
 */
-static inline struct tinywot_scratchpad tinywot_scratchpad_new(void)
-{
-  return (struct tinywot_scratchpad) {
+static inline struct tinywot_scratchpad tinywot_scratchpad_new(void) {
+  return (struct tinywot_scratchpad){
     .type_hint = TINYWOT_CONTENT_TYPE_UNKNOWN,
   };
 }
@@ -316,120 +315,120 @@ int tinywot_scratchpad_split(
 /*!
   \brief An unknown or uninitialized opeartion type.
 */
-#define TINYWOT_OPERATION_TYPE_UNKNOWN (UINT32_C(0))
+#define TINYWOT_OPERATION_TYPE_UNKNOWN                  (UINT32_C(0))
 
 /*!
   \brief "Identifies the read operation on Property Affordances to retrieve
   the corresponding data."
 */
-#define TINYWOT_OPERATION_TYPE_READPROPERTY (UINT32_C(1))
+#define TINYWOT_OPERATION_TYPE_READPROPERTY             (UINT32_C(1))
 
 /*!
   \brief "Identifies the write operation on Property Affordances to update the
   corresponding data."
 */
-#define TINYWOT_OPERATION_TYPE_WRITEPROPERTY (UINT32_C(1) << 1)
+#define TINYWOT_OPERATION_TYPE_WRITEPROPERTY            (UINT32_C(1) << 1)
 
 /*!
   \brief "Identifies the observe operation on Property Affordances to be
   notified with the new data when the Property is updated."
 */
-#define TINYWOT_OPERATION_TYPE_OBSERVEPROPERTY (UINT32_C(1) << 2)
+#define TINYWOT_OPERATION_TYPE_OBSERVEPROPERTY          (UINT32_C(1) << 2)
 
 /*!
   \brief "Identifies the unobserve operation on Property Affordances to stop
   the corresponding notifications."
 */
-#define TINYWOT_OPERATION_TYPE_UNOBSERVEPROPERTY (UINT32_C(1) << 3)
+#define TINYWOT_OPERATION_TYPE_UNOBSERVEPROPERTY        (UINT32_C(1) << 3)
 
 /*!
   \brief "Identifies the invoke operation on Action Affordances to perform
   the corresponding action."
 */
-#define TINYWOT_OPERATION_TYPE_INVOKEACTION (UINT32_C(1) << 4)
+#define TINYWOT_OPERATION_TYPE_INVOKEACTION             (UINT32_C(1) << 4)
 
 /*!
   \brief "Identifies the querying operation on Action Affordances to get the
   status of the corresponding action."
 */
-#define TINYWOT_OPERATION_TYPE_QUERYACTION (UINT32_C(1) << 5)
+#define TINYWOT_OPERATION_TYPE_QUERYACTION              (UINT32_C(1) << 5)
 
 /*!
   \brief "Identifies the cancel operation on Action Affordances to cancel the
   ongoing corresponding action."
 */
-#define TINYWOT_OPERATION_TYPE_CANCELACTION (UINT32_C(1) << 6)
+#define TINYWOT_OPERATION_TYPE_CANCELACTION             (UINT32_C(1) << 6)
 
 /*!
   \brief "Identifies the subscribe operation on Event Affordances to be
   notified by the Thing when the event occurs."
 */
-#define TINYWOT_OPERATION_TYPE_SUBSCRIBEEVENT (UINT32_C(1) << 7)
+#define TINYWOT_OPERATION_TYPE_SUBSCRIBEEVENT           (UINT32_C(1) << 7)
 
 /*!
   \brief "Identifies the unsubscribe operation on Event Affordances to stop
   the corresponding notifications."
 */
-#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBEEVENT (UINT32_C(1) << 8)
+#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBEEVENT         (UINT32_C(1) << 8)
 
 /*!
   \brief "Identifies the readallproperties operation on a Thing to retrieve
   the data of all Properties in a single interaction."
 */
-#define TINYWOT_OPERATION_TYPE_READALLPROPERTIES (UINT32_C(1) << 9)
+#define TINYWOT_OPERATION_TYPE_READALLPROPERTIES        (UINT32_C(1) << 9)
 
 /*!
   \brief "Identifies the writeallproperties operation on a Thing to update the
   data of all writable Properties in a single interaction."
 */
-#define TINYWOT_OPERATION_TYPE_WRITEALLPROPERTIES (UINT32_C(1) << 10)
+#define TINYWOT_OPERATION_TYPE_WRITEALLPROPERTIES       (UINT32_C(1) << 10)
 
 /*!
   \brief "Identifies the readmultipleproperties operation on a Thing to
   retrieve the data of selected Properties in a single interaction."
 */
-#define TINYWOT_OPERATION_TYPE_READMULTIPLEPROPERTIES (UINT32_C(1) << 11)
+#define TINYWOT_OPERATION_TYPE_READMULTIPLEPROPERTIES   (UINT32_C(1) << 11)
 
 /*!
   \brief "Identifies the writemultipleproperties operation on a Thing to
   update the data of selected writable Properties in a single interaction."
 */
-#define TINYWOT_OPERATION_TYPE_WRITEMULTIPLEPROPERTIES (UINT32_C(1) << 12)
+#define TINYWOT_OPERATION_TYPE_WRITEMULTIPLEPROPERTIES  (UINT32_C(1) << 12)
 
 /*!
   \brief "Identifies the observeallproperties operation on Properties to be
   notified with new data when any Property is updated."
 */
-#define TINYWOT_OPERATION_TYPE_OBSERVEALLPROPERTIES (UINT32_C(1) << 13)
+#define TINYWOT_OPERATION_TYPE_OBSERVEALLPROPERTIES     (UINT32_C(1) << 13)
 
 /*!
   \brief "Identifies the unobserveallproperties operation on Properties to
   stop notifications from all Properties in a single interaction."
 */
-#define TINYWOT_OPERATION_TYPE_UNOBSERVEALLPROPERTIES (UINT32_C(1) << 14)
+#define TINYWOT_OPERATION_TYPE_UNOBSERVEALLPROPERTIES   (UINT32_C(1) << 14)
 
 /*!
   \brief "Identifies the queryallactions operation on a Thing to get the
   status of all Actions in a single interaction."
 */
-#define TINYWOT_OPERATION_TYPE_QUERYALLACTIONS (UINT32_C(1) << 15)
+#define TINYWOT_OPERATION_TYPE_QUERYALLACTIONS          (UINT32_C(1) << 15)
 
 /*!
   \brief "Identifies the subscribeallevents operation on Events to subscribe
   to notifications from all Events in a single interaction."
 */
-#define TINYWOT_OPERATION_TYPE_SUBSCRIBEALLEVENTS (UINT32_C(1) << 16)
+#define TINYWOT_OPERATION_TYPE_SUBSCRIBEALLEVENTS       (UINT32_C(1) << 16)
 
 /*!
   \brief "Identifies the unsubscribeallevents operation on Events to
   unsubscribe from notifications from all Events in a single interaction."
 */
-#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBEALLEVENTS (UINT32_C(1) << 17)
+#define TINYWOT_OPERATION_TYPE_UNSUBSCRIBEALLEVENTS     (UINT32_C(1) << 17)
 
 /*!
   \brief All of the operation types defined in the library.
 */
-#define TINYWOT_OPERATION_TYPE_ALL (~UINT32_C(0))
+#define TINYWOT_OPERATION_TYPE_ALL                      (~UINT32_C(0))
 
 /*! \} */ /* defgroup tinywot_operation_types */
 
@@ -653,7 +652,9 @@ void tinywot_thing_initialize_with_forms(
   \param[in] memory_size_byte The allocated size of `memory`.
 */
 void tinywot_thing_initialize_with_memory(
-  struct tinywot_thing *self, void *memory, size_t memory_size_byte
+  struct tinywot_thing *self,
+  void *memory,
+  size_t memory_size_byte
 );
 
 /*!
@@ -683,15 +684,16 @@ int tinywot_thing_get_form(
   `tinywot_form::op` being the same as the supplied one, its contents will be
   replaced, instead of a new one being inserted into the list directly.
 
-  \param[in] self A [Thing].
-  \param[inout] form The [Form] to be registered to the [Thing].
+  \param[inout] self A [Thing].
+  \param[in] form The [Form] to be registered to the [Thing].
   \return \ref tinywot_status
 
   [Form]: \ref tinywot_form
   [Thing]: \ref tinywot_thing
 */
 int tinywot_thing_set_form(
-  struct tinywot_thing const *self, struct tinywot_form const *form
+  struct tinywot_thing *self,
+  struct tinywot_form const *form
 );
 
 /*!
@@ -761,7 +763,9 @@ int tinywot_thing_process_request(
   \return \ref tinywot_status
 */
 typedef int tinywot_io_read_function_t(
-  unsigned char *buffer, size_t to_read_byte, size_t *read_byte
+  unsigned char *buffer,
+  size_t to_read_byte,
+  size_t *read_byte
 );
 
 /*!
@@ -776,7 +780,9 @@ typedef int tinywot_io_read_function_t(
   \return \ref tinywot_status
 */
 typedef int tinywot_io_write_function_t(
-  unsigned char const *buffer, size_t to_write_byte, size_t *written_byte
+  unsigned char const *buffer,
+  size_t to_write_byte,
+  size_t *written_byte
 );
 
 /*!
@@ -819,7 +825,8 @@ struct tinywot_io {
   [I/O functions]: \ref tinywot_io
 */
 typedef int tinywot_protocol_receive_function_t(
-  struct tinywot_request *request, struct tinywot_io const *io
+  struct tinywot_request *request,
+  struct tinywot_io const *io
 );
 
 /*!
@@ -833,7 +840,8 @@ typedef int tinywot_protocol_receive_function_t(
   [I/O functions]: \ref tinywot_io
 */
 typedef int tinywot_protocol_send_function_t(
-  struct tinywot_response *response, struct tinywot_io const *io
+  struct tinywot_response *response,
+  struct tinywot_io const *io
 );
 
 /*!
@@ -888,7 +896,8 @@ struct tinywot_servient {
   [Servient]: \ref tinywot_servient
 */
 int tinywot_servient_process(
-  struct tinywot_servient const *self, struct tinywot_scratchpad *scratchpad
+  struct tinywot_servient const *self,
+  struct tinywot_scratchpad *scratchpad
 );
 
 /*! \} */ /* defgroup tinywot_servient */
