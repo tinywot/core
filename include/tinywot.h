@@ -33,7 +33,7 @@ extern "C" {
 /*!
   \brief There is insufficient memory to complete an action.
 */
-#define TINYWOT_ERROR_NOT_ENOUGH_MEMORY (-5)
+#define TINYWOT_ERROR_NOT_ENOUGH_MEMORY  (-5)
 
 /*!
   \brief A requested operation is not allowed.
@@ -41,14 +41,14 @@ extern "C" {
   This can happen when a target can be matched, but does not accept the
   operation type requested.
 */
-#define TINYWOT_ERROR_NOT_ALLOWED (-4)
+#define TINYWOT_ERROR_NOT_ALLOWED        (-4)
 
 /*!
   \brief A function is not implemented.
 
   This can happen when a target is registered to a `NULL` handler.
 */
-#define TINYWOT_ERROR_NOT_IMPLEMENTED (-3)
+#define TINYWOT_ERROR_NOT_IMPLEMENTED    (-3)
 
 /*!
   \brief Something is missing.
@@ -56,21 +56,21 @@ extern "C" {
   This can happen when a requested target and operation type cannot match any
   handler registered in a `tinywot_thing` instance.
 */
-#define TINYWOT_ERROR_NOT_FOUND (-2)
+#define TINYWOT_ERROR_NOT_FOUND          (-2)
 
 /*!
   \brief General error.
 
   This is used to indicate an error without specifying a reason.
 */
-#define TINYWOT_ERROR_GENERAL (0)
+#define TINYWOT_ERROR_GENERAL            (0)
 
 /*!
   \brief Success.
 
   This is not an error.
 */
-#define TINYWOT_SUCCESS (1)
+#define TINYWOT_SUCCESS                  (1)
 
 /*!
   \brief Check if a status code indicates an error.
