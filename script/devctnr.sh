@@ -43,8 +43,9 @@ if ! podman container exists "$CONTAINER_ID"; then
   echo ':: Configuring TinyWoT development container...'
   podman container start "$CONTAINER_ID"
   podman container exec "$CONTAINER_ID" sh -c '\
-    apt update && apt full-upgrade --autoremove --purge --yes && \
-    apt install --yes build-essential python3 python3-pip clang-format doxygen && \
+    apt-get update && apt-get full-upgrade --autoremove --purge --yes && \
+    apt-get install --yes build-essential python3 python3-pip clang-format \
+      doxygen graphviz && \
     python3 -m pip install platformio reuse'
 else
   echo ':: Starting existing TinyWoT development container...'
