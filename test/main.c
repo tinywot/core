@@ -3,12 +3,9 @@
   SPDX-License-Identifier: MIT
 */
 
+#include "thing.h"
+#include <tinywot.h>
 #include <unity.h>
-
-/* These function implementations exist! They're just in separate source
-   files. Also, add a declaration here when a new test is defined. */
-
-
 
 /* These are necessary to keep Unity happy. */
 
@@ -18,7 +15,7 @@ void tearDown(void) {}
 int main(void) {
   UNITY_BEGIN();
 
-
+  suite_tinywot_thing_get_form();
 
   return UNITY_END();
 }
