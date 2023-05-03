@@ -35,7 +35,7 @@ extern "C" {
 /*!
   \brief The type of status codes recognized and returned by the library.
 */
-typedef signed char tinywot_status_t;
+typedef int_fast8_t tinywot_status_t;
 
 /*!
   \brief Attempt to write to a read-only data structure.
@@ -119,7 +119,7 @@ static inline bool tinywot_is_success(tinywot_status_t sc) {
 /*!
   \brief The type of a flag value.
 */
-typedef unsigned char tinywot_flag_t;
+typedef uint_fast8_t tinywot_flag_t;
 
 /*!
   \defgroup grp_flags_is_read_only Flags - Is Read Only
@@ -222,7 +222,7 @@ struct tinywot_payload {
   size_t size_byte;
 
   /*! \brief An indicator of the type of `content`. */
-  unsigned int content_type;
+  uint_fast16_t content_type;
 
   /*! \brief The valid data length of `content`. */
   size_t content_length_byte;
@@ -290,7 +290,7 @@ struct tinywot_payload {
 /*!
   \brief The data type of an operation type.
 */
-typedef unsigned long tinywot_operation_type_t;
+typedef uint_fast32_t tinywot_operation_type_t;
 
 /*!
   \brief An unknown or uninitialized opeartion type.
@@ -445,7 +445,7 @@ typedef unsigned long tinywot_operation_type_t;
 */
 
 /*! \brief The data type of a response status. */
-typedef unsigned char tinywot_response_status_t;
+typedef uint_fast8_t tinywot_response_status_t;
 
 /*! \brief An uninitialized status code. */
 #define TINYWOT_RESPONSE_STATUS_UNKNOWN       ((tinywot_response_status_t)0)
