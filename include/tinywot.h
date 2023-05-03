@@ -38,6 +38,11 @@ extern "C" {
 typedef signed char tinywot_status_t;
 
 /*!
+  \brief Attempt to write to a read-only data structure.
+*/
+#define TINYWOT_ERROR_READ_ONLY          ((tinywot_status_t)-6)
+
+/*!
   \brief There is insufficient memory to complete an action.
 */
 #define TINYWOT_ERROR_NOT_ENOUGH_MEMORY  ((tinywot_status_t)-5)
@@ -256,7 +261,7 @@ struct tinywot_payload {
   write:
 
   ```
-  uint_least32_t op =
+  tinywot_operation_type_t operation_type =
     TINYWOT_OPERATION_TYPE_READPROPERTY | TINYWOT_OPERATION_TYPE_WRITEPROPERTY
   ```
 
@@ -679,7 +684,7 @@ void tinywot_thing_initialize_with_memory(
   [Thing]: \ref tinywot_thing
   [Form]: \ref tinywot_form
 */
-int tinywot_thing_get_form(
+tinywot_status_t tinywot_thing_get_form(
   struct tinywot_thing const *self,
   char const *target,
   tinywot_operation_type_t operation_types,
@@ -722,7 +727,7 @@ int tinywot_thing_get_form(
   [Thing]: \ref tinywot_thing
   [Form]: \ref tinywot_form
 */
-int tinywot_thing_set_form(
+tinywot_status_t tinywot_thing_set_form(
   struct tinywot_thing *self,
   struct tinywot_form const *form
 );
@@ -748,7 +753,7 @@ int tinywot_thing_set_form(
   [Thing]: \ref tinywot_thing
   [Form]: \ref tinywot_form
 */
-int tinywot_thing_do(
+tinywot_status_t tinywot_thing_do(
   struct tinywot_thing const *self,
   char const *target,
   tinywot_operation_type_t operation_type,
@@ -774,7 +779,7 @@ int tinywot_thing_do(
   [Response]: \ref tinywot_response
   [Thing]: \ref tinywot_thing
 */
-int tinywot_thing_process_request(
+tinywot_status_t tinywot_thing_process_request(
   struct tinywot_thing const *self,
   struct tinywot_request *request,
   struct tinywot_response *response
@@ -945,7 +950,7 @@ struct tinywot_servient {
 
   [Servient]: \ref tinywot_servient
 */
-int tinywot_servient_process(struct tinywot_servient const *self);
+tinywot_status_t tinywot_servient_process(struct tinywot_servient const *self);
 
 /*! \} */ /* grp_servient */
 
