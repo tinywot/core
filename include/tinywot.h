@@ -522,7 +522,7 @@ struct tinywot_response {
   [Operation Type]: \ref grp_op_ty
   [Payload]: \ref tinywot_payload
 */
-typedef int tinywot_form_handler_t(
+typedef tinywot_status_t tinywot_form_handler_t(
   char const *name,
   char const *target,
   tinywot_operation_type_t operation_type,
