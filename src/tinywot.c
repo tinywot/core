@@ -43,20 +43,31 @@ tinywot_status_t tinywot_thing_get_form(
   tinywot_operation_type_t operation_types,
   struct tinywot_form const **form
 ) {
-  tinywot_status_t status = TINYWOT_ERROR_NOT_FOUND;
-
   for (size_t i = 0; i < self->forms_count_n; i += 1) {
     struct tinywot_form const *form_i_p = &self->forms[i];
 
-    if (((form_i_p->allowed_operation_types & operation_types) == operation_types) &&
-        (strcmp(form_i_p->target, target) == 0)) {
+    /*
+      The following conditions:
+
+      1. Determine whether the incoming operation type(s) are all included by
+         the allowed operation types set in form; that is, all bits set in
+         `operation_types` must be also set in
+         `form_i_p->allowed_operation_types`. The expression applies the allowed
+         operation types as a bit mask to the incoming operation type(s), then
+         see if the incoming opeartion type(s) changes. If it does, then there
+         exists at least one bit that is not also set in the allowed operation
+         types.
+      2. Determine whether the incoming target string equals to the one in form.
+    */
+
+    if (((form_i_p->allowed_operation_types & operation_types)
+         == operation_types) && (strcmp(form_i_p->target, target) == 0)) {
       *form = form_i_p;
-      status = TINYWOT_SUCCESS;
-      break;
+      return TINYWOT_SUCCESS;
     }
   }
 
-  return status;
+  return TINYWOT_ERROR_NOT_FOUND;
 }
 
 tinywot_status_t tinywot_thing_set_form(
@@ -70,21 +81,44 @@ tinywot_status_t tinywot_thing_set_form(
   size_t form_i = 0;
   struct tinywot_form *form_i_p = NULL;
 
+  /*
+    Iterate over the existing list first to see if any form can be replaced
+    with the incoming one.
+  */
   for (; form_i < self->forms_count_n; form_i += 1) {
     form_i_p = (struct tinywot_form *)&self->forms[form_i];
 
+    /*
+      The following conditions:
+
+      1. Determine whether the incoming `allowed_operation_types` has at least
+         one bit that is also set in the `allowed_operation_types` in the
+         pointed form in the Thing. The expression masks the two to see if the
+         result is still true (not zero). If so, then the two forms have at
+         least one overlapping operation type, and the corresponding form may be
+         replaced by the incoming one (depending one 2).
+      2. Determine whether the incoming target string equals to the one in form.
+    */
+
     if ((form_i_p->allowed_operation_types & form->allowed_operation_types) &&
         (strcmp(form_i_p->target, form->target) == 0)) {
+      /* XXX: copying padding could be an insecure operation. */
       memcpy(form_i_p, form, sizeof(struct tinywot_form));
       return TINYWOT_SUCCESS;
     }
   }
 
+  /*
+    At this point, `form_i == self->forms_count_n`. If it is also the maximum
+    number of form, then there is no more slot for us to append the incoming
+    one.
+  */
   if (form_i >= self->forms_max_n) {
     return TINYWOT_ERROR_NOT_ENOUGH_MEMORY;
   }
 
   self->forms_count_n += 1;
+  /* XXX: copying padding could be an insecure operation. */
   memcpy(form_i_p, form, sizeof(struct tinywot_form));
 
   return TINYWOT_SUCCESS;
@@ -99,9 +133,7 @@ tinywot_status_t tinywot_thing_do(
   struct tinywot_form const *form = NULL;
   tinywot_status_t status = TINYWOT_ERROR_GENERAL;
 
-  status = tinywot_thing_get_form(
-    self, target, operation_type, &form
-  );
+  status = tinywot_thing_get_form(self, target, operation_type, &form);
   if (tinywot_is_error(status)) {
     return status;
   }
@@ -146,6 +178,7 @@ tinywot_status_t tinywot_thing_process_request(
       break;
   }
 
+  /* Payload is reused by the handler. */
   response->payload = request->payload;
 
   return status;
@@ -157,9 +190,9 @@ tinywot_status_t tinywot_servient_process(struct tinywot_servient const *self) {
   struct tinywot_payload payload = {0};
   tinywot_status_t status = TINYWOT_ERROR_GENERAL;
 
+  /* Prepare memory for payload, and fit it into `request`. */
   payload.content = self->memory;
   payload.size_byte = self->memory_size_byte;
-
   response.payload = &payload;
 
   status = self->protocol.receive(&request, &self->io);
@@ -167,9 +200,7 @@ tinywot_status_t tinywot_servient_process(struct tinywot_servient const *self) {
     return status;
   }
 
-  status = tinywot_thing_process_request(
-    &self->thing, &request, &response
-  );
+  status = tinywot_thing_process_request(&self->thing, &request, &response);
   if (tinywot_is_error(status)) {
     return status;
   }
