@@ -608,60 +608,6 @@ struct tinywot_thing {
 };
 
 /*!
-  \brief Initialize a [Thing] with an existing array of [Form]s.
-
-  The memory pointed by `forms` will be regarded as an already-initialized,
-  valid [Form] array. `self->forms_count_n` and `self->forms_max_n` will both be
-  set to the supplied `forms_size_n`. If this is undesirable (e.g. the available
-  memory is actually bigger), change `tinywot_thing::forms_max_n` afterwards.
-
-  Usually, the [Form] array is pre-declared as a constant stored in ROM. If this
-  is the case, set `::TINYWOT_FLAG_READ_ONLY` in `flags` to indicate that the
-  [Form] array cannot be changed.
-
-  \param[inout] self A [Thing].
-  \param[in] forms An array of [Form]s.
-  \param[in] forms_size_n How many [Form]s are there.
-  \param[in] flags Attributes apply to the initializing [Thing].
-
-  [Thing]: \ref tinywot_thing
-  [Form]: \ref tinywot_form
-*/
-void tinywot_thing_initialize_with_forms(
-  struct tinywot_thing *self,
-  struct tinywot_form const *forms,
-  size_t forms_size_n,
-  tinywot_flag_t flags
-);
-
-/*!
-  \brief Initialize a [Thing] with an empty memory space.
-
-  The memory pointed by `memory` will be treated as an empty memory space.
-  `self->forms_count_n` will be set to `0`, while `self->forms_max_n` will be
-  calculated from the supplied `memory_size_byte`.
-
-  Use this function to make it possible to modify the initialized [Thing], such
-  as adding or removing [Form]s. If `memory` is allocated from the heap, set
-  `::TINYWOT_FLAG_DYNAMIC` in `flags` to indicate that it should be freed when
-  the [Thing] is destructed.
-
-  \param[inout] self A [Thing].
-  \param[in] memory A pointer to a memory space.
-  \param[in] memory_size_byte The allocated size of `memory` in bytes.
-  \param[in] flags Attributes apply to the initializing [Thing].
-
-  [Thing]: \ref tinywot_thing
-  [Form]: \ref tinywot_form
-*/
-void tinywot_thing_initialize_with_memory(
-  struct tinywot_thing *self,
-  void *memory,
-  size_t memory_size_byte,
-  tinywot_flag_t flags
-);
-
-/*!
   \brief Find a [Form] from a [Thing].
 
   A [Form] is found when:

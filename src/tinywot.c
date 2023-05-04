@@ -13,30 +13,6 @@
 
 #include <tinywot.h>
 
-void tinywot_thing_initialize_with_forms(
-  struct tinywot_thing *self,
-  struct tinywot_form const *forms,
-  size_t forms_size_n,
-  tinywot_flag_t flags
-) {
-  self->flags = flags;
-  self->forms_count_n = forms_size_n;
-  self->forms_max_n = forms_size_n;
-  self->forms = forms;
-}
-
-void tinywot_thing_initialize_with_memory(
-  struct tinywot_thing *self,
-  void *memory,
-  size_t memory_size_byte,
-  tinywot_flag_t flags
-) {
-  self->flags = flags;
-  self->forms_count_n = 0;
-  self->forms_max_n = memory_size_byte / sizeof(struct tinywot_form);
-  self->forms = memory;
-}
-
 tinywot_status_t tinywot_thing_get_form(
   struct tinywot_thing const *self,
   char const *target,
