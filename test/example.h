@@ -8,7 +8,9 @@
 
 #include <tinywot.h>
 
-void init_example_forms(struct tinywot_form const **forms, size_t *forms_size);
-void init_example_thing(struct tinywot_thing const **thing);
+struct tinywot_thing *example_thing_new(void);
+void example_thing_free(struct tinywot_thing *thing);
+struct tinywot_form const *example_form_0(void);
+struct tinywot_form const *example_form_1(void);
 
 #endif
