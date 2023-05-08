@@ -19,27 +19,38 @@ tinywot_status_t tinywot_thing_get_form(
   tinywot_operation_type_t operation_types,
   struct tinywot_form const **form
 ) {
-  for (size_t i = 0; i < self->forms_count_n; i += 1) {
-    struct tinywot_form const *form_i_p = &self->forms[i];
+  size_t form_i = 0;
+  struct tinywot_form *form_i_p = (struct tinywot_form *)self->forms;
 
-    /*
-      The following conditions:
+  for (; form_i < self->forms_count_n; form_i += 1) {
+    if (strcmp(form_i_p->target, target) == 0) {
+      /*
+        Determine whether the incoming operation type(s) are all included by
+        the allowed operation types set in form; that is, all bits set in
+        `operation_types` must be also set in
+        `form_i_p->allowed_operation_types`. The expression applies the allowed
+        operation types as a bit mask to the incoming operation type(s), then
+        see if the incoming opeartion type(s) changes. If it does, then there
+        exists at least one bit that is not also set in the allowed operation
+        types.
+      */
+      tinywot_operation_type_t op_ty_all_allowed =
+        (form_i_p->allowed_operation_types & operation_types)
+          == operation_types;
 
-      1. Determine whether the incoming operation type(s) are all included by
-         the allowed operation types set in form; that is, all bits set in
-         `operation_types` must be also set in
-         `form_i_p->allowed_operation_types`. The expression applies the allowed
-         operation types as a bit mask to the incoming operation type(s), then
-         see if the incoming opeartion type(s) changes. If it does, then there
-         exists at least one bit that is not also set in the allowed operation
-         types.
-      2. Determine whether the incoming target string equals to the one in form.
-    */
+      if (op_ty_all_allowed) {
+        /*
+          Allow opting-out form pointer receipt to only perform an existence
+          check.
+        */
+        if (form) {
+          *form = form_i_p;
+        }
 
-    if (((form_i_p->allowed_operation_types & operation_types)
-         == operation_types) && (strcmp(form_i_p->target, target) == 0)) {
-      *form = form_i_p;
-      return TINYWOT_SUCCESS;
+        return TINYWOT_SUCCESS;
+      } else {
+        return TINYWOT_ERROR_NOT_ALLOWED;
+      }
     }
   }
 
@@ -55,32 +66,33 @@ tinywot_status_t tinywot_thing_set_form(
   }
 
   size_t form_i = 0;
-  struct tinywot_form *form_i_p = NULL;
+  struct tinywot_form *form_i_p = (struct tinywot_form *)self->forms;
 
   /*
     Iterate over the existing list first to see if any form can be replaced
     with the incoming one.
   */
-  for (; form_i < self->forms_count_n; form_i += 1) {
-    form_i_p = (struct tinywot_form *)&self->forms[form_i];
+  for (; form_i < self->forms_count_n; form_i += 1, form_i_p += 1) {
+    if (strcmp(form_i_p->target, form->target) == 0) {
+      /*
+        Determine whether the incoming `allowed_operation_types` has at least
+        one bit that is also set in the `allowed_operation_types` in the
+        pointed form in the Thing. The expression masks the two to see if the
+        result is still true (not zero). If so, then the two forms have at
+        least one overlapping operation type, and the corresponding form may be
+        replaced by the incoming one (depending one 2).
+      */
+      tinywot_operation_type_t op_ty_any_overlap =
+        form_i_p->allowed_operation_types & form->allowed_operation_types;
 
-    /*
-      The following conditions:
+      if (op_ty_any_overlap) {
+        /* XXX: copying padding could be an insecure operation. */
+        memcpy(form_i_p, form, sizeof(struct tinywot_form));
 
-      1. Determine whether the incoming `allowed_operation_types` has at least
-         one bit that is also set in the `allowed_operation_types` in the
-         pointed form in the Thing. The expression masks the two to see if the
-         result is still true (not zero). If so, then the two forms have at
-         least one overlapping operation type, and the corresponding form may be
-         replaced by the incoming one (depending one 2).
-      2. Determine whether the incoming target string equals to the one in form.
-    */
-
-    if ((form_i_p->allowed_operation_types & form->allowed_operation_types) &&
-        (strcmp(form_i_p->target, form->target) == 0)) {
-      /* XXX: copying padding could be an insecure operation. */
-      memcpy(form_i_p, form, sizeof(struct tinywot_form));
-      return TINYWOT_SUCCESS;
+        return TINYWOT_SUCCESS;
+      } else {
+        /* continue; */
+      }
     }
   }
 
