@@ -20,14 +20,14 @@ extern "C" {
 #endif
 
 /*!
-  \defgroup grp_sc Status Codes
+  \defgroup doc_group_status_codes Status Codes
 
-  These are function return values used across the library. User-implemented
-  functions should use them too.
+  Function return values recognized and used across the library.
 
-  They are signed values. All values less than or equal to `0` are errors. `1`
-  is the only successful status, albeit all values greater than `0` are reserved
-  for successful status.
+  Errors are always defined to be less than 0. All values greater or equal to 0
+  are reserved for successful statuses. `tinywot_status_is_error()` and
+  `tinywot_status_is_success()` are provided as two convenient functions for
+  checking success or error status in general.
 
   \{
 */
@@ -38,14 +38,24 @@ extern "C" {
 typedef int_fast8_t tinywot_status_t;
 
 /*!
-  \brief Attempt to write to a read-only data structure.
+  \brief A function is not implemented.
+
+  This can happen when a target is registered to a `NULL` handler.
 */
-#define TINYWOT_ERROR_READ_ONLY          ((tinywot_status_t)-6)
+#define TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED   ((tinywot_status_t)-14)
 
 /*!
   \brief There is insufficient memory to complete an action.
 */
-#define TINYWOT_ERROR_NOT_ENOUGH_MEMORY  ((tinywot_status_t)-5)
+#define TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY ((tinywot_status_t)-12)
+
+/*!
+  \brief Something is missing.
+
+  This can happen when a requested target and operation type cannot match any
+  handler registered in a Thing.
+*/
+#define TINYWOT_STATUS_ERROR_NOT_FOUND         ((tinywot_status_t)-2)
 
 /*!
   \brief A requested operation is not allowed.
@@ -53,36 +63,14 @@ typedef int_fast8_t tinywot_status_t;
   This can happen when a target can be matched, but does not accept the
   operation type requested.
 */
-#define TINYWOT_ERROR_NOT_ALLOWED        ((tinywot_status_t)-4)
-
-/*!
-  \brief A function is not implemented.
-
-  This can happen when a target is registered to a `NULL` handler.
-*/
-#define TINYWOT_ERROR_NOT_IMPLEMENTED    ((tinywot_status_t)-3)
-
-/*!
-  \brief Something is missing.
-
-  This can happen when a requested target and operation type cannot match any
-  handler registered in a `tinywot_thing` instance.
-*/
-#define TINYWOT_ERROR_NOT_FOUND          ((tinywot_status_t)-2)
-
-/*!
-  \brief General error.
-
-  This is used to indicate an error without specifying a reason.
-*/
-#define TINYWOT_ERROR_GENERAL            ((tinywot_status_t)0)
+#define TINYWOT_STATUS_ERROR_NOT_ALLOWED       ((tinywot_status_t)-1)
 
 /*!
   \brief Success.
 
   This is not an error.
 */
-#define TINYWOT_SUCCESS                  ((tinywot_status_t)1)
+#define TINYWOT_STATUS_SUCCESS                 ((tinywot_status_t)0)
 
 /*!
   \brief Check if a status code indicates an error.
@@ -90,8 +78,8 @@ typedef int_fast8_t tinywot_status_t;
   \param[in] sc A status code returned by the library.
   \return `true` if `sc` is an error, `false` if it is a success.
 */
-static inline bool tinywot_is_error(tinywot_status_t sc) {
-  return sc <= ((tinywot_status_t)0);
+static inline bool tinywot_status_is_error(tinywot_status_t sc) {
+  return sc < ((tinywot_status_t)0);
 }
 
 /*!
@@ -100,154 +88,14 @@ static inline bool tinywot_is_error(tinywot_status_t sc) {
   \param[in] sc A status code returned by the library.
   \return `true` if `sc` is an success, `false` if it is an error.
 */
-static inline bool tinywot_is_success(tinywot_status_t sc) {
-  return sc > ((tinywot_status_t)0);
+static inline bool tinywot_status_is_success(tinywot_status_t sc) {
+  return sc >= ((tinywot_status_t)0);
 }
 
-/*! \} */ /* grp_sc */
+/*! \} */ /* doc_group_status_codes */
 
 /*!
-  \defgroup grp_flags Flags
-
-  Flag values are used across the library to mark attributes of a data structure
-  in a compact way. They are bit flags that can be bitwise OR-ed together to
-  indicate multiple attributes.
-
-  \{
-*/
-
-/*!
-  \brief The type of a flag value.
-*/
-typedef uint_fast8_t tinywot_flag_t;
-
-/*!
-  \defgroup grp_flags_is_read_only Flags - Is Read Only
-
-  This flag indicates whether the associated value can be written or not. User-
-  supplied contents can locate in either RAM or ROM, and often this cannot be
-  indicated by the variable qualifier. This flag helps with distinguishing this
-  attribute in run-time.
-
-  \{
-*/
-
-/*! \brief The bit mask of this flag. */
-#define TINYWOT_FLAG_READ_ONLY (((tinywot_flag_t)1) << 0)
-
-/*!
-  \brief Check if a flag value says "read only".
-
-  \param[in] flags A flags field from somewhere.
-  \return `true` if `flags` has its read-only bit set; `false` otherwise.
-  \sa `tinywot_flag_is_read_write`
-*/
-static inline bool tinywot_flag_is_read_only(tinywot_flag_t flags) {
-  return flags & TINYWOT_FLAG_READ_ONLY;
-}
-
-/*!
-  \brief Check if a flag value says "read and write".
-
-  \param[in] flags A flags field from somewhere.
-  \return `true` if `flags` doesn't have its read-only bit set; `false`
-  otherwise.
-  \sa `tinywot_flag_is_read_only`
-*/
-static inline bool tinywot_flag_is_read_write(tinywot_flag_t flags) {
-  return !tinywot_flag_is_read_only(flags);
-}
-
-/*! \} */ /* grp_flags_is_read_only */
-
-/*!
-  \defgroup grp_flags_is_dynamic Flags - Is Dynamic
-
-  This flag indicates whether the associated value is from the heap or not.
-  Although not recommended in embedded platforms, this is possible. If this flag
-  is present, then relevant functions should free the memory occupied by the
-  associated value. Otherwise, they should take no action.
-
-  \{
-*/
-
-/*! \brief The bit mask of this flag. */
-#define TINYWOT_FLAG_DYNAMIC (((tinywot_flag_t)1) << 1)
-
-/*!
-  \brief Check if a flag value says "dynamic memory".
-
-  \param[in] flags A flags field from somewhere.
-  \return `true` if `flags` has its dynamic memory bit set; `false` otherwise.
-  \sa `tinywot_flag_is_static`
-*/
-static inline bool tinywot_flag_is_dynamic(tinywot_flag_t flags) {
-  return flags & TINYWOT_FLAG_DYNAMIC;
-}
-
-/*!
-  \brief Check if a flag value says "static memory".
-
-  \param[in] flags A flags field from somewhere.
-  \return `true` if `flags` doesn't have its dynamic memory bit set; `false`
-  otherwise.
-  \sa `tinywot_flag_is_dynamic`
-*/
-static inline bool tinywot_flag_is_static(tinywot_flag_t flags) {
-  return !tinywot_flag_is_dynamic(flags);
-}
-
-/*! \} */ /* grp_flags_is_dynamic */
-
-/*! \} */ /* grp_flags */
-
-/*!
-  \defgroup grp_pld Payload
-
-  A payload can be the content of a network request or a network response.
-  It is usually associated with a segment of memory. Most of the time, it acts
-  as a buffer with metadata associated with it.
-
-  \{
-*/
-
-/*!
-  \brief A segment of memory with metadata.
-*/
-struct tinywot_payload {
-  /*! \brief Attributes of this data structure. */
-  tinywot_flag_t flags;
-
-  /*! \brief The allocated memory size of `content` in byte. */
-  size_t size_byte;
-
-  /*! \brief An indicator of the type of `content`. */
-  uint_fast16_t content_type;
-
-  /*! \brief The valid data length of `content`. */
-  size_t content_length_byte;
-
-  /*!
-    \brief An opaque data structure holding the state of stream / cursor
-    information from `update`.
-  */
-  void *content_cursor;
-
-  /*!
-    \brief A function for pulling content out from somewhere to `content`.
-  */
-  tinywot_status_t (*update)(struct tinywot_payload *self);
-
-  /*!
-    \brief A pointer to a segment of consectutive memory.
-  */
-  unsigned char *content;
-};
-
-/*! \} */ /* grp_pld */
-
-/*!
-  \defgroup grp_op_ty Operation Types
+  \defgroup doc_group_op_types Operation Types
 
   An operation type is a "semantic intention" of a request, according to the
   Thing Description specification.
@@ -430,16 +278,22 @@ typedef uint_fast32_t tinywot_operation_type_t;
 #define TINYWOT_OPERATION_TYPE_ALL                      \
   (~((tinywot_operation_type_t)0))
 
-/*! \} */ /* grp_op_ty */
+/*! \} */ /* doc_group_op_types */
 
 /*!
-  \defgroup grp_req_res Requests and Responses
+  \defgroup doc_group_req_n_res Requests and Responses
 
   \{
 */
 
 /*!
-  \defgroup grp_res_status Response Status
+  \defgroup doc_group_res_status Response Status
+
+  They are usually converted from \ref doc_group_status_codes returned by
+  functions. Interestingly, they are defined as the positive variant of
+  \ref doc_group_status_codes. Some \ref doc_group_status_codes do not have
+  corresponding Response Statuses; they are mapped into
+  `TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR`.
 
   \{
 */
@@ -447,104 +301,108 @@ typedef uint_fast32_t tinywot_operation_type_t;
 /*! \brief The data type of a response status. */
 typedef uint_fast8_t tinywot_response_status_t;
 
-/*! \brief An uninitialized status code. */
-#define TINYWOT_RESPONSE_STATUS_UNKNOWN       ((tinywot_response_status_t)0)
-
-/*! \brief All good. */
-#define TINYWOT_RESPONSE_STATUS_OK            ((tinywot_response_status_t)1)
-
-/*! \brief A general error. */
-#define TINYWOT_RESPONSE_STATUS_ERROR         ((tinywot_response_status_t)2)
-
-/*! \brief Something could not be found. */
-#define TINYWOT_RESPONSE_STATUS_NOT_FOUND     ((tinywot_response_status_t)3)
-
 /*! \brief The requested action has not been implemented. */
-#define TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED ((tinywot_response_status_t)4)
-
-/*! \brief The requested action is not allowed on the target. */
-#define TINYWOT_RESPONSE_STATUS_NOT_ALLOWED   ((tinywot_response_status_t)5)
-
-/*! \} */ /* grp_res_status */
+#define TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED  ((tinywot_response_status_t)14)
 
 /*!
-  \brief A request of operation.
+  \brief Cannot finish a request due to an unspecified and unexpected error.
+*/
+#define TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR ((tinywot_response_status_t)5)
+
+/*! \brief Something could not be found. */
+#define TINYWOT_RESPONSE_STATUS_NOT_FOUND      ((tinywot_response_status_t)2)
+
+/*! \brief The requested action is not allowed on the target. */
+#define TINYWOT_RESPONSE_STATUS_NOT_ALLOWED    ((tinywot_response_status_t)1)
+
+/*! \brief All good. */
+#define TINYWOT_RESPONSE_STATUS_OK             ((tinywot_response_status_t)0)
+
+/*! \} */ /* doc_group_res_status */
+
+/*!
+  \brief A metadata structure about data.
+*/
+struct tinywot_payload {
+  /*! \brief A pointer to the buffer holding the actual data. */
+  void *content;
+
+  /*! \brief The size of buffer pointed by `content` in byte. */
+  size_t content_buffer_size_byte;
+
+  /*! \brief The valid data length of `content`. */
+  size_t content_length_byte;
+
+  /*! \brief An indicator of the type of `content`. */
+  uint_fast16_t content_type;
+};
+
+/*!
+  \brief The size of buffer reserved for the `target` string in
+  `tinywot_request`.
+*/
+#ifndef TINYWOT_REQUEST_TARGET_BUFFER_SIZE_BYTE
+#define TINYWOT_REQUEST_TARGET_BUFFER_SIZE_BYTE 32
+#endif
+
+/*!
+  \brief An incoming request.
 */
 struct tinywot_request {
-  /*! \brief The intended submision target extracted from the request. */
-  char const *target;
+  /*! \brief The content carried with the request. */
+  struct tinywot_payload payload;
 
   /*! \brief The intended operation type extracted from the request. */
   tinywot_operation_type_t operation_type;
 
-  /*! \brief The content carried with the request. */
-  struct tinywot_payload *payload;
+  /*! \brief The intended submision target extracted from the request. */
+  char target[TINYWOT_REQUEST_TARGET_BUFFER_SIZE_BYTE];
 };
 
 /*!
-  \brief A response as a result of an operation.
+  \brief An outgoing response.
 */
 struct tinywot_response {
+  /*! \brief The content to send with the response. */
+  struct tinywot_payload payload;
+
   /*!
     \brief A status code for the response.
 
-    This is normally calculated from the \ref grp_sc returned by functions.
+    This is normally calculated from the \ref doc_group_status_codes returned by functions.
   */
   tinywot_response_status_t status;
-
-  /*! \brief The content to send with the response. */
-  struct tinywot_payload *payload;
 };
 
-/*! \} */ /* grp_req_res */
+/*! \} */ /* doc_group_req_n_res */
 
 /*!
-  \defgroup grp_impl Behavior Implementation
+  \defgroup doc_group_impl Behavior Implementation (Forms and Things)
 
   \{
 */
 
 /*!
-  \brief Signature of a handler function implementing the behavior of a
+  \brief The signature of a handler function implementing the behavior of a
   submission target.
 
-  \param[in] name The name of affordance specified in a [Form].
-  \param[in] target The submission target of the [Form] that this function is
-  handling.
-  \param[in] operation_type The [Operation Type] of request.
-  \param[inout] payload A [Payload] data structure used for both acquiring
-  incoming data and sending outgoing data.
-  \param[inout] user_data The context information set in the corresponding
-  [Form].
-  \return \ref grp_sc
-
-  [Form]: \ref tinywot_form
-  [Operation Type]: \ref grp_op_ty
-  [Payload]: \ref tinywot_payload
+  \param[out] response A pointer to a new `tinywot_response`. The handler
+  should fill in this `tinywot_response` to return something.
+  \param[in] request A pointer to an incoming `tinywot_request`.
+  \param[inout] context The context information set in the corresponding
+  `tinywot_form`.
+  \return \ref doc_group_status_codes
 */
 typedef tinywot_status_t tinywot_form_handler_t(
-  char const *name,
-  char const *target,
-  tinywot_operation_type_t operation_type,
-  struct tinywot_payload *payload,
-  void *user_data
+  struct tinywot_response *response,
+  struct tinywot_request *request,
+  void *context
 );
 
 /*!
   \brief An operation endpoint.
 */
 struct tinywot_form {
-  /*!
-    \brief The name of affordance that this form is attached to.
-
-    For a top-level form, this field should be set to `NULL`.
-
-    This field is so far informative only -- no procedure relies on its value.
-    The form handler (`handler`) receives this as a parameter, and can use it
-    as a reference.
-  */
-  char const *name;
-
   /*!
     \brief The submission target of the form.
 
@@ -565,7 +423,7 @@ struct tinywot_form {
   /*!
     \brief The allowed operation types on this form.
 
-    \ref grp_op_ty can be bitwise-ORed here to allow multiple
+    \ref doc_group_op_types can be bitwise-ORed here to allow multiple
     operation types:
 
     ```
@@ -574,7 +432,7 @@ struct tinywot_form {
     ```
 
     `TINYWOT_OPERATION_TYPE_ALL` can also be used to indicate that all
-    operations are allowed on this form. See \ref grp_op_ty for
+    operations are allowed on this form. See \ref doc_group_op_types for
     more details about opeartion types.
   */
   tinywot_operation_type_t allowed_operation_types;
@@ -587,30 +445,60 @@ struct tinywot_form {
   /*!
     \brief Arbitrary data to pass to `handler` when it is called.
   */
-  void *user_data;
+  void *context;
 };
 
 /*!
-  \brief A Thing.
+  \internal
+  \brief The base type of a Thing.
+
+  The layout of this structure is made to be identical to `tinywot_thing_static`
+  and `tinywot_thing_dynamic`. This allows them to be upcasted to this type, and
+  thus implementing polymorphism (sort of) -- functions accept this base type to
+  work on all derived types (classes).
+
+  One should never use this type directly.
+
+  \sa `tinywot_thing_static`, `tinywot_thing_dynamic`
 */
-struct tinywot_thing {
-  /*! \brief Attributes associated with this Thing. */
-  tinywot_flag_t flags;
+struct tinywot_thing_base {
+  /*! \brief A list of forms describing behaviors of this Thing. */
+  struct tinywot_form *forms;
+
+  /*! \brief The number of registered forms in `forms`. */
+  size_t forms_count_n;
+};
+
+/*!
+  \brief A Thing that is statically configured.
+*/
+struct tinywot_thing_static {
+  /*! \brief A list of forms describing behaviors of this Thing. */
+  struct tinywot_form const *forms;
+
+  /*! \brief The number of registered forms in `forms`. */
+  size_t forms_count_n;
+};
+
+/*!
+  \brief A Thing that supports runtime configuration.
+*/
+struct tinywot_thing_dynamic {
+  /*! \brief A list of forms describing behaviors of this Thing. */
+  struct tinywot_form *forms;
 
   /*! \brief The number of registered forms in `forms`. */
   size_t forms_count_n;
 
   /*! \brief The maximum number of forms in `forms`. */
   size_t forms_max_n;
-
-  /*! \brief A list of forms describing behaviors of this Thing. */
-  struct tinywot_form const *forms;
 };
 
 /*!
-  \brief Find a [Form] from a [Thing].
+  \internal
+  \brief Find a [Form] from a [Base Thing].
 
-  A [Form] is found when:
+  A [Form] is found when all the following apply:
 
   - The supplied `target` equals to `tinywot_form::target`
   - The supplied `operation_types` _matches_
@@ -627,26 +515,95 @@ struct tinywot_thing {
     - `::TINYWOT_ERROR_NOT_FOUND` if a [Form] is not found. The value of `form`
       is undefined in this case.
 
-  [Thing]: \ref tinywot_thing
+  [Thing]: \ref tinywot_thing_base
   [Form]: \ref tinywot_form
 */
-tinywot_status_t tinywot_thing_get_form(
-  struct tinywot_thing const *self,
+tinywot_status_t tinywot_thing_base_get_form(
+  struct tinywot_thing_base const *self,
   char const *target,
   tinywot_operation_type_t operation_types,
   struct tinywot_form const **form
 );
 
 /*!
-  \brief Set a [Form] to a [Thing].
+  \brief Find a [Form] from a [Static Thing].
 
-  This copies the content of `form` into the [Thing] if it is not read-only; the
-  caller do not have to allocate a heap space for `form`.
+  A [Form] is found when all the following apply:
+
+  - The supplied `target` equals to `tinywot_form::target`
+  - The supplied `operation_types` _matches_
+    `tinywot_form::allowed_operation_types` (that is, all bits are set within
+    the mask).
+
+  \param[in] self A [Thing].
+  \param[in] target The submission target.
+  \param[in] operation_types The target operation type(s).
+  \param[out] form A pointer to the [Form] that matches the supplied conditions.
+  \return
+    - `::TINYWOT_SUCCESS` if a [Form] is found. `form` will point to that
+      [Form].
+    - `::TINYWOT_ERROR_NOT_FOUND` if a [Form] is not found. The value of `form`
+      is undefined in this case.
+
+  [Thing]: \ref tinywot_thing_static
+  [Form]: \ref tinywot_form
+*/
+static inline tinywot_status_t tinywot_thing_static_get_form(
+  struct tinywot_thing_static const *self,
+  char const *target,
+  tinywot_operation_type_t operation_types,
+  struct tinywot_form const **form
+) {
+  return tinywot_thing_base_get_form(
+    (struct tinywot_thing_base const *)self, target, operation_types, form
+  );
+}
+
+/*!
+  \brief Find a [Form] from a [Dynamic Thing].
+
+  A [Form] is found when all the following apply:
+
+  - The supplied `target` equals to `tinywot_form::target`
+  - The supplied `operation_types` _matches_
+    `tinywot_form::allowed_operation_types` (that is, all bits are set within
+    the mask).
+
+  \param[in] self A [Thing].
+  \param[in] target The submission target.
+  \param[in] operation_types The target operation type(s).
+  \param[out] form A pointer to the [Form] that matches the supplied conditions.
+  \return
+    - `::TINYWOT_SUCCESS` if a [Form] is found. `form` will point to that
+      [Form].
+    - `::TINYWOT_ERROR_NOT_FOUND` if a [Form] is not found. The value of `form`
+      is undefined in this case.
+
+  [Thing]: \ref tinywot_thing_dynamic
+  [Form]: \ref tinywot_form
+*/
+static inline tinywot_status_t tinywot_thing_dynamic_get_form(
+  struct tinywot_thing_dynamic const *self,
+  char const *target,
+  tinywot_operation_type_t operation_types,
+  struct tinywot_form const **form
+) {
+  return tinywot_thing_base_get_form(
+    (struct tinywot_thing_base const *)self, target, operation_types, form
+  );
+}
+
+/*!
+  \brief Set a [Form] to a [Dynamic Thing].
+
+  This copies the content of `form` into the [Dynamic Thing]. The caller do not
+  have to allocate a heap space for `form`, but any memory pointed by pointers
+  in a [Form] should be in the heap.
 
   Before attempting to insert a new [Form] into the [Thing], this function tries
   to use `form->target` and `form->allowed_operation_types` to find an existing
   slot in `self`. If one is found, then the slot will be overwritten with the
-  supplied `form`. An existing [Form] is found when:
+  supplied `form`. An existing [Form] is found when all the following apply:
 
   - The supplied `target` equals to `tinywot_form::target`
   - The supplied `operation_types` _is not mutually exclusive to_
@@ -670,129 +627,84 @@ tinywot_status_t tinywot_thing_get_form(
     - `::TINYWOT_ERROR_NOT_ENOUGH_MEMORY` if no more [Form] can be added to
       `self` because there is no space left.
 
-  [Thing]: \ref tinywot_thing
+  [Thing]: \ref tinywot_thing_dynamic
   [Form]: \ref tinywot_form
 */
-tinywot_status_t tinywot_thing_set_form(
-  struct tinywot_thing *self,
+tinywot_status_t tinywot_thing_dynamic_set_form(
+  struct tinywot_thing_dynamic *self,
   struct tinywot_form const *form
 );
 
 /*!
-  \brief Perform an operation on a [Thing].
-
-  This function first invokes `tinywot_thing_get_form()` to find a matching
-  [Form], then tries to invoke the handler of it.
-
-  \param[in] self A [Thing].
-  \param[in] target The submission target.
-  \param[in] operation_type The target operation type.
-  \param[inout] payload The content of request. It is reused in the handler to
-  place the content of response.
-  \return What the actual handler of the invoked [Form] returns, plus:
-    - `::TINYWOT_ERROR_NOT_FOUND` if `target` is not found.
-    - `::TINYWOT_ERROR_NOT_ALLOWED` if `target` is found, but `operation_type`
-      does not match.
-    - `::TINYWOT_ERROR_NOT_IMPLEMENTED` if a [Form] is found, but there is no
-      handler registered (`NULL`).
-
-  [Thing]: \ref tinywot_thing
-  [Form]: \ref tinywot_form
-*/
-tinywot_status_t tinywot_thing_do(
-  struct tinywot_thing const *self,
-  char const *target,
-  tinywot_operation_type_t operation_type,
-  struct tinywot_payload *payload
-);
-
-/*!
+  \internal
   \brief Process a [Request], transforming it into a [Response] with a [Thing].
-
-  `request` should be a valid one ready for handling. `response` will be
-  overwritten by the subsequent functions.
-
-  Note that `request->payload` will be reused and moved to `response->payload`
-  after this function.
 
   \param[in] self A [Thing].
   \param[inout] request A [Request] to be processed by the registered handler
   in `self`.
   \param[inout] response An empty [Response] to be filled in.
-  \return What `tinywot_thing_do()` returns.
+  \return \ref doc_group_status_codes
 
   [Request]: \ref tinywot_request
   [Response]: \ref tinywot_response
   [Thing]: \ref tinywot_thing
 */
-tinywot_status_t tinywot_thing_process_request(
-  struct tinywot_thing const *self,
+tinywot_status_t tinywot_thing_base_process_request(
+  struct tinywot_thing_base const *self,
   struct tinywot_request *request,
   struct tinywot_response *response
 );
 
-/*! \} */ /* grp_impl */
-
 /*!
-  \defgroup grp_io Platform-specific Input / Output Interfaces
+  \brief Process a [Request], transforming it into a [Response] with a [Thing].
 
-  The two interfaces (`read` and `write`) are essential for TinyWoT to work
-  on a higher level of abstraction. They should be simple functions that
-  fills in a given buffer and sends out a given buffer respectively. You must
-  implement them. See `tinywot_io_read_function_t` and
-  `tinywot_io_write_function_t` for the required function signatures.
+  \param[in] self A [Thing].
+  \param[inout] request A [Request] to be processed by the registered handler
+  in `self`.
+  \param[inout] response An empty [Response] to be filled in.
+  \return \ref doc_group_status_codes
 
-  \{
+  [Request]: \ref tinywot_request
+  [Response]: \ref tinywot_response
+  [Thing]: \ref tinywot_thing
 */
+static inline tinywot_status_t tinywot_thing_static_process_request(
+  struct tinywot_thing_static const *self,
+  struct tinywot_request *request,
+  struct tinywot_response *response
+) {
+  return tinywot_thing_base_process_request(
+    (struct tinywot_thing_base const *)self, request, response
+  );
+}
 
 /*!
-  \brief Signature of a function reading in raw data.
+  \brief Process a [Request], transforming it into a [Response] with a [Thing].
 
-  \todo Clarify behavior.
+  \param[in] self A [Thing].
+  \param[inout] request A [Request] to be processed by the registered handler
+  in `self`.
+  \param[inout] response An empty [Response] to be filled in.
+  \return \ref doc_group_status_codes
 
-  \param[out] buffer A pointer pointing to a valid region of memory.
-  \param[in] to_read_byte The number of bytes to read and place to `buffer`.
-  \param[out] read_byte The number of bytes that have actually been read.
-  \return \ref grp_sc
+  [Request]: \ref tinywot_request
+  [Response]: \ref tinywot_response
+  [Thing]: \ref tinywot_thing
 */
-typedef int tinywot_io_read_function_t(
-  unsigned char *buffer,
-  size_t to_read_byte,
-  size_t *read_byte
-);
+static inline tinywot_status_t tinywot_thing_dynamic_process_request(
+  struct tinywot_thing_dynamic const *self,
+  struct tinywot_request *request,
+  struct tinywot_response *response
+) {
+  return tinywot_thing_base_process_request(
+    (struct tinywot_thing_base const *)self, request, response
+  );
+}
+
+/*! \} */ /* doc_group_impl */
 
 /*!
-  \brief Signature of a function writing out raw data.
-
-  \todo Clarify behavior.
-
-  \param[in] buffer A pointer pointing to a valid region of memory.
-  \param[in] to_write_byte The number of bytes to write from `buffer`.
-  \param[out] written_byte THe number of bytes that have actually been written
-  out.
-  \return \ref grp_sc
-*/
-typedef int tinywot_io_write_function_t(
-  unsigned char const *buffer,
-  size_t to_write_byte,
-  size_t *written_byte
-);
-
-/*!
-  \brief A read function and a write function.
-*/
-struct tinywot_io {
-  /*! \brief A pointer to the function reading in raw data. */
-  tinywot_io_read_function_t *read;
-
-  /*! \brief A pointer to the function writing out raw data. */
-  tinywot_io_write_function_t *write;
-};
-
-/*! \} */ /* grp_io */
-
-/*!
-  \defgroup grp_proto Protocol Stack Interfaces
+  \defgroup doc_group_proto Protocol Stack Interfaces
 
   [&sect; 8.6 Protocol Stack Implementation, Web of Things (WoT)
   Architecture][wota-8.6] bridges the gap between the external world and a
@@ -811,47 +723,59 @@ struct tinywot_io {
   \brief A function that reads with [I/O functions] and produces a [Request].
 
   \param[inout] request A pointer to a valid [Request].
-  \param[in] io [I/O functions].
-  \return \ref grp_sc
+  \param[inout] context The data structure set in the corresponding
+  `tinywot_protocol`.
+  \return \ref doc_group_status_codes
 
   [Request]: \ref tinywot_request
-  [I/O functions]: \ref tinywot_io
 */
-typedef int tinywot_protocol_receive_function_t(
-  struct tinywot_request *request,
-  struct tinywot_io const *io
+typedef tinywot_status_t tinywot_protocol_receive_function_t(
+  struct tinywot_request *request, void *context
 );
 
 /*!
   \brief A function that writes with [I/O functions] and a [Response].
 
   \param[inout] response A pointer to a valid [Response].
-  \param[in] io [I/O functions].
-  \return \ref grp_sc
+  \param[inout] context The data structure set in the corresponding
+  `tinywot_protocol`.
+  \return \ref doc_group_status_codes
 
   [Response]: \ref tinywot_response
-  [I/O functions]: \ref tinywot_io
 */
-typedef int tinywot_protocol_send_function_t(
-  struct tinywot_response *response,
-  struct tinywot_io const *io
+typedef tinywot_status_t tinywot_protocol_send_function_t(
+  struct tinywot_response *response, void *context
 );
 
 /*!
   \brief A receive function and a send function.
 */
 struct tinywot_protocol {
-  /*! \brief A pointer pointing to the receive. */
-  tinywot_protocol_receive_function_t *receive;
+  /*!
+    \brief A function to read in and receive a [Request].
 
-  /*! \brief A pointer pointing to the send. */
+    [Request]: \ref tinywot_request
+  */
+  tinywot_protocol_receive_function_t *recv;
+
+  /*!
+    \brief A function to send and write a [Response] out.
+
+    [Response]: \ref tinywot_response
+  */
   tinywot_protocol_send_function_t *send;
+
+  /*!
+    \brief A pointer to any data structure for the convenience of `recv()` and
+    `send()`.
+  */
+  void *context;
 };
 
-/*! \} */ /* grp_proto */
+/*! \} */ /* doc_group_proto */
 
 /*!
-  \defgroup grp_servient Servient
+  \defgroup doc_group_servient Servient
 
   [&sect; 6.7 WoT System Components and Their Interconnectivity, Web of
   Things (WoT) Architecture][wota-6.7] defines a _Servient_ as "a software
@@ -869,36 +793,28 @@ struct tinywot_protocol {
   \brief A software stack implementing a Web Thing.
 */
 struct tinywot_servient {
-  /*! \brief Attributes associated with this Servient. */
-  tinywot_flag_t flags;
+  /*! \brief \ref doc_group_impl */
+  struct tinywot_thing_base const *thing;
 
-  /*! \brief \ref grp_impl */
-  struct tinywot_thing thing;
-
-  /*! \brief \ref grp_proto */
-  struct tinywot_protocol protocol;
-
-  /*! \brief \ref grp_io */
-  struct tinywot_io io;
-
-  /*! \brief A segment of memory for the exclusive use of the Servient. */
-  void *memory;
-
-  /*! \brief The size of `memory` in bytes. */
-  size_t memory_size_byte;
+  /*! \brief \ref doc_group_proto */
+  struct tinywot_protocol const *protocol;
 };
 
 /*!
   \brief Run the Thing's service routine once.
 
   \param[in] self A [Servient] instance.
-  \return \ref grp_sc
+  \return \ref doc_group_status_codes
 
   [Servient]: \ref tinywot_servient
 */
-tinywot_status_t tinywot_servient_process(struct tinywot_servient const *self);
+tinywot_status_t tinywot_servient_process(
+  struct tinywot_servient const *self,
+  void *memory,
+  size_t memory_size_byte
+);
 
-/*! \} */ /* grp_servient */
+/*! \} */ /* doc_group_servient */
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -3,7 +3,7 @@
   SPDX-License-Identifier: CC0-1.0
 -->
 
-# TinyWoT
+# TinyWoT Core
 
 TinyWoT is a [W3C Web of Things (WoT)](https://www.w3.org/WoT/) framework targetting resource-constrained embedded devices.
 
