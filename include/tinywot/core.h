@@ -774,48 +774,6 @@ struct tinywot_protocol {
 
 /*! \} */ /* doc_group_proto */
 
-/*!
-  \defgroup doc_group_servient Servient
-
-  [&sect; 6.7 WoT System Components and Their Interconnectivity, Web of
-  Things (WoT) Architecture][wota-6.7] defines a _Servient_ as "a software
-  stack that implements the WoT building blocks." It's a higher level
-  abstraction of a _Web Thing_ implementation in software. To some extents,
-  it can be seen as an _WoT App_.
-
-  [wota-6.7]:
-  https://www.w3.org/TR/2020/REC-wot-architecture-20200409/#sec-wot-servient-architecture-high-level
-
-  \{
-*/
-
-/*!
-  \brief A software stack implementing a Web Thing.
-*/
-struct tinywot_servient {
-  /*! \brief \ref doc_group_impl */
-  struct tinywot_thing_base const *thing;
-
-  /*! \brief \ref doc_group_proto */
-  struct tinywot_protocol const *protocol;
-};
-
-/*!
-  \brief Run the Thing's service routine once.
-
-  \param[in] self A [Servient] instance.
-  \return \ref doc_group_status_codes
-
-  [Servient]: \ref tinywot_servient
-*/
-tinywot_status_t tinywot_servient_process(
-  struct tinywot_servient const *self,
-  void *memory,
-  size_t memory_size_byte
-);
-
-/*! \} */ /* doc_group_servient */
-
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
