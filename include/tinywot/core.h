@@ -407,7 +407,6 @@ struct tinywot_form {
 };
 
 /*!
-  \internal
   \brief The base type of a Thing.
 
   The layout of this structure is made to be identical to `tinywot_thing_static` and
@@ -452,7 +451,6 @@ struct tinywot_thing_dynamic {
 };
 
 /*!
-  \internal
   \brief Find a [Form] from a [Base Thing].
 
   A [Form] is found when all the following apply:
@@ -587,7 +585,6 @@ tinywot_status_t tinywot_thing_dynamic_set_form(
 );
 
 /*!
-  \internal
   \brief Process a [Request], transforming it into a [Response] with a [Thing].
 
   \param[in] self A [Thing].
