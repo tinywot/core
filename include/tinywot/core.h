@@ -8,8 +8,8 @@
   \brief TinyWoT public API definitions.
 */
 
-#ifndef TINYWOT_H
-#define TINYWOT_H
+#ifndef TINYWOT_CORE_H
+#define TINYWOT_CORE_H
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -717,4 +717,4 @@ struct tinywot_protocol {
 } /* extern "C" */
 #endif
 
-#endif /* TINYWOT_H */
+#endif /* TINYWOT_CORE_H */
