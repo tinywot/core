@@ -8,10 +8,30 @@
   \brief TinyWoT public API implementations.
 */
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 
 #include <tinywot/core.h>
+
+tinywot_status_t tinywot_payload_append(
+  struct tinywot_payload *self,
+  void *data,
+  size_t data_size_byte
+) {
+  unsigned char *head = (unsigned char *)(self->content);
+  unsigned char *tail = head + self->content_length_byte;
+
+  if (self->content_length_byte + data_size_byte >
+      self->content_buffer_size_byte) {
+    return TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY;
+  }
+
+  memcpy(tail, data, data_size_byte);
+  self->content_length_byte += data_size_byte;
+
+  return TINYWOT_STATUS_SUCCESS;
+}
 
 tinywot_status_t tinywot_thing_base_get_form(
   struct tinywot_thing_base const *self,

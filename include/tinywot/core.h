@@ -304,6 +304,20 @@ struct tinywot_payload {
 };
 
 /*!
+  \brief Append the memory content pointed by `data` to a `tinywot_payload`.
+
+  \param[in] self A `tinywot_payload` per se.
+  \param[in] data A pointer to a memory region containing data.
+  \param[in] data_size_byte How long is the data, in `byte`s.
+  \return \ref doc_group_status_codes
+*/
+tinywot_status_t tinywot_payload_append(
+  struct tinywot_payload *self,
+  void *data,
+  size_t data_size_byte
+);
+
+/*!
   \brief The size of buffer reserved for the `target` string in `tinywot_request`.
 */
 #ifndef TINYWOT_REQUEST_TARGET_BUFFER_SIZE_BYTE
