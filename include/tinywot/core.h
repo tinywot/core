@@ -745,32 +745,50 @@ struct tinywot_thing_dynamic {
 };
 
 /*!
+  \brief Get the `forms` member of `tinywot_thing_dynamic`.
   \memberof tinywot_thing_dynamic
   \public
+
+  \param[in] self A `tinywot_thing_dynamic` instance.
+  \return `tinywot_thing_dynamic::forms`.
 */
 struct tinywot_form const *tinywot_thing_dynamic_get_forms(
   struct tinywot_thing_dynamic const *self
 );
 
 /*!
+  \brief Get the `forms_count_n` member of `tinywot_thing_dynamic`.
   \memberof tinywot_thing_dynamic
   \public
+
+  \param[in] self A `tinywot_thing_dynamic` instance.
+  \return `tinywot_thing_dynamic::forms_count_n`.
 */
 size_t tinywot_thing_dynamic_get_forms_count(
   struct tinywot_thing_dynamic const *self
 );
 
 /*!
+  \brief Get the `forms_max_n` member of `tinywot_thing_dynamic`.
   \memberof tinywot_thing_dynamic
   \public
+
+  \param[in] self A `tinywot_thing_dynamic` instance.
+  \return `tinywot_thing_dynamic::forms_max_n`.
 */
 size_t tinywot_thing_dynamic_get_forms_max(
   struct tinywot_thing_dynamic const *self
 );
 
 /*!
+  \brief Set a memory buffer backing the forms array of a
+  `tinywot_thing_dynamic` instance.
   \memberof tinywot_thing_dynamic
   \public
+
+  \param[in] self A `tinywot_thing_dynamic` instance.
+  \param[in] buffer A pointer to the backing memory.
+  \param[in] buffer_size_byte The size of `buffer` in bytes.
 */
 void tinywot_thing_dynamic_set_forms_buffer(
   struct tinywot_thing_dynamic *self,
@@ -779,8 +797,16 @@ void tinywot_thing_dynamic_set_forms_buffer(
 );
 
 /*!
+  \brief Find a `tinywot_form` in a `tinywot_thing_dynamic`.
   \memberof tinywot_thing_dynamic
   \public
+
+  \param[in]  self A `tinywot_thing_dynamic` instance.
+  \param[out] form For returning a pointer pointing to the found
+  `tinywot_form`.
+  \param[in]  target The submission target string to find.
+  \param[in]  operation_types The allowed operation types to match.
+  \return \ref status_codes
 */
 tinywot_status_t tinywot_thing_dynamic_find_form(
   struct tinywot_thing_dynamic const *self,
@@ -790,16 +816,28 @@ tinywot_status_t tinywot_thing_dynamic_find_form(
 );
 
 /*!
+  \brief Add a `tinywot_form` to a `tinywot_thing_dynamic`.
   \memberof tinywot_thing_dynamic
   \public
+
+  \param[in] self A `tinywot_thing_dynamic` instance.
+  \param[in] form A pointer to a `tinywot_form`.
+  \return \ref status_codes
 */
 tinywot_status_t tinywot_thing_dynamic_add_form(
   struct tinywot_thing_dynamic *self, struct tinywot_form const *form
 );
 
 /*!
+  \brief Find and replace a `tinywot_form` in a `tinywot_thing_dynamic`.
   \memberof tinywot_thing_dynamic
   \public
+
+  \param[in] self A `tinywot_thing_dynamic` instance.
+  \param[in] target The submission target string to find.
+  \param[in] operation_types The allowed operation types to match.
+  \param[in] form A pointer to a `tinywot_form`.
+  \return \ref status_codes
 */
 tinywot_status_t tinywot_thing_dynamic_change_form(
   struct tinywot_thing_dynamic *self,
@@ -809,8 +847,14 @@ tinywot_status_t tinywot_thing_dynamic_change_form(
 );
 
 /*!
+  \brief Find and delete a `tinywot_form` in a `tinywot_thing_dynamic`.
   \memberof tinywot_thing_dynamic
   \public
+
+  \param[in] self A `tinywot_thing_dynamic` instance.
+  \param[in] target The submission target string to find.
+  \param[in] operation_types The allowed operation types to match.
+  \return \ref status_codes
 */
 tinywot_status_t tinywot_thing_dynamic_remove_form(
   struct tinywot_thing_dynamic *self,
@@ -819,8 +863,16 @@ tinywot_status_t tinywot_thing_dynamic_remove_form(
 );
 
 /*!
+  \brief Convert a `tinywot_request` to a `tinywot_response` with the
+  help of a `tinywot_thing_dynamic`.
   \memberof tinywot_thing_dynamic
   \public
+
+  \param[in]  self A `tinywot_thing_dynamic` instance.
+  \param[out] response An instance of `tinywot_response`, the fields of
+  which would be finished by the found handler function.
+  \param[in]  request An incoming `tinywot_request`.
+  \return \ref status_codes
 */
 tinywot_status_t tinywot_thing_dynamic_process_request(
   struct tinywot_thing_dynamic const *self,
