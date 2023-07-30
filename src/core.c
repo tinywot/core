@@ -14,27 +14,7 @@
 
 #include <tinywot/core.h>
 
-tinywot_response_status_t tinywot_response_status_from_status(
-  tinywot_status_t const status
-) {
-  switch (status) {
-    case TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED:
-      return TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED;
-
-    case TINYWOT_STATUS_ERROR_NOT_FOUND:
-      return TINYWOT_RESPONSE_STATUS_NOT_FOUND;
-
-    case TINYWOT_STATUS_ERROR_NOT_ALLOWED:
-      return TINYWOT_RESPONSE_STATUS_NOT_ALLOWED;
-
-    case TINYWOT_STATUS_SUCCESS:
-      return TINYWOT_RESPONSE_STATUS_OK;
-
-    case TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY: /* fall through */
-    default:
-      return TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR;
-  }
-}
+/*==================== Private APIs ====================*/
 
 /*!
   \brief Find a [Form] from a [Base Thing].
@@ -126,6 +106,30 @@ static tinywot_status_t tinywot_thing_base_process_request(
   return status;
 }
 
+/*==================== Public APIs ====================*/
+
+tinywot_response_status_t tinywot_response_status_from_status(
+  tinywot_status_t const status
+) {
+  switch (status) {
+    case TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED:
+      return TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED;
+
+    case TINYWOT_STATUS_ERROR_NOT_FOUND:
+      return TINYWOT_RESPONSE_STATUS_NOT_FOUND;
+
+    case TINYWOT_STATUS_ERROR_NOT_ALLOWED:
+      return TINYWOT_RESPONSE_STATUS_NOT_ALLOWED;
+
+    case TINYWOT_STATUS_SUCCESS:
+      return TINYWOT_RESPONSE_STATUS_OK;
+
+    case TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY: /* fall through */
+    default:
+      return TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR;
+  }
+}
+
 tinywot_status_t tinywot_payload_append(
   struct tinywot_payload *self,
   void const *data,
@@ -134,8 +138,8 @@ tinywot_status_t tinywot_payload_append(
   unsigned char *head = (unsigned char *)(self->content);
   unsigned char *tail = head + self->content_length_byte;
 
-  if (self->content_length_byte + data_size_byte >
-      self->content_buffer_size_byte) {
+  if (self->content_length_byte + data_size_byte
+      > self->content_buffer_size_byte) {
     return TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY;
   }
 
