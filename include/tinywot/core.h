@@ -415,7 +415,7 @@ struct tinywot_payload {
 */
 tinywot_status_t tinywot_payload_append(
   struct tinywot_payload *self,
-  void *data,
+  void const *data,
   size_t data_size_byte
 );
 
