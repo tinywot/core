@@ -18,6 +18,8 @@
 
 /*!
   \brief Find a [Form] from a [Base Thing].
+  \memberof tinywot_thing_base
+  \protected
 
   A [Form] is found when all the following apply:
 
@@ -84,6 +86,25 @@ static tinywot_status_t tinywot_thing_base_find_form(
   return TINYWOT_STATUS_ERROR_NOT_FOUND;
 }
 
+/*!
+  \brief Process a [Request] on a [Base Thing], producing a [Response].
+  \memberof tinywot_thing_base
+  \protected
+
+  This is a simple helper that finds a [Form] based on the supplied
+  [Request] and invokes the handler function associated to the [Form].
+
+  \param[in]  self A [Base Thing].
+  \param[out] response An empty [Response], which will be filled up by
+  the handler function.
+  \param[in]  request A [Request] that is going to be processed.
+  \return Whatever the handler function returns.
+
+  [Base Thing]: \ref tinywot_thing_base
+  [Request]: \ref tinywot_request
+  [Response]: \ref tinywot_response
+  [Form]: \ref tinywot_form
+*/
 static tinywot_status_t tinywot_thing_base_process_request(
   struct tinywot_thing_base const *self,
   struct tinywot_response *response,
@@ -225,6 +246,9 @@ tinywot_status_t tinywot_thing_dynamic_add_form(
   struct tinywot_thing_dynamic *self, struct tinywot_form const *form
 ) {
   /* not implemented yet */
+  (void)self;
+  (void)form;
+
   return TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED;
 }
 
@@ -235,59 +259,12 @@ tinywot_status_t tinywot_thing_dynamic_change_form(
   struct tinywot_form const *form
 ) {
   /* not implemented yet */
+  (void)self;
+  (void)target;
+  (void)operation_types;
+  (void)form;
+
   return TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED;
-}
-
-tinywot_status_t tinywot_thing_dynamic_set_form(
-  struct tinywot_thing_dynamic *self,
-  struct tinywot_form const *form
-) {
-  size_t form_i = 0;
-  struct tinywot_form *form_i_p = self->base.forms;
-
-  /*
-    Iterate over the existing list first to see if any form can be
-    replaced with the incoming one.
-  */
-  for (; form_i < self->base.forms_count_n; form_i += 1, form_i_p += 1) {
-    if (strcmp(form_i_p->target, form->target) == 0) {
-      /*
-        Determine whether the incoming `allowed_operation_types` has at
-        least one bit that is also set in the `allowed_operation_types`
-        in the pointed form in the Thing. The expression masks the two
-        to see if the result is still true (not zero). If so, then the
-        two forms have at least one overlapping operation type, and the
-        corresponding form may be replaced by the incoming one
-        (depending one 2).
-      */
-      tinywot_operation_type_t overlap =
-        form_i_p->allowed_operation_types & form->allowed_operation_types;
-
-      if (overlap) {
-        /* XXX: copying padding could be an insecure operation. */
-        memcpy(form_i_p, form, sizeof(struct tinywot_form));
-
-        return TINYWOT_STATUS_SUCCESS;
-      } else {
-        /* continue; */
-      }
-    }
-  }
-
-  /*
-    At this point, `form_i == self->forms_count_n`. If it is also the
-    maximum number of form, then there is no more slot for us to append
-    the incoming one.
-  */
-  if (form_i >= self->forms_max_n) {
-    return TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY;
-  }
-
-  self->base.forms_count_n += 1;
-  /* XXX: copying padding could be an insecure operation. */
-  memcpy(form_i_p, form, sizeof(struct tinywot_form));
-
-  return TINYWOT_STATUS_SUCCESS;
 }
 
 tinywot_status_t tinywot_thing_dynamic_remove_form(
@@ -296,6 +273,10 @@ tinywot_status_t tinywot_thing_dynamic_remove_form(
   tinywot_operation_type_t allowed_operation_types
 ) {
   /* not implemented yet */
+  (void)self;
+  (void)target;
+  (void)allowed_operation_types;
+
   return TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED;
 }
 
