@@ -230,7 +230,7 @@ struct tinywot_thing_dynamic *tinywot_test_thing_dynamic_example_new(void) {
 
   thing->base.forms = forms;
   thing->base.forms_count_n =
-    sizeof(form_example_list) / sizeof(struct tinywot_form *);
+    sizeof(form_example_list) / sizeof(struct tinywot_form);
   thing->forms_max_n = 8;
 
   return thing;
