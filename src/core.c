@@ -8,129 +8,13 @@
   \brief TinyWoT Core API implementation.
 */
 
-#include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 
 #include <tinywot/core.h>
 
-/*==================== Private APIs ====================*/
-
-/*!
-  \brief Find a [Form] from a [Base Thing].
-  \memberof tinywot_thing_base
-  \protected
-
-  A [Form] is found when all the following apply:
-
-  - The supplied `target` equals to `tinywot_form::target`
-  - The supplied `operation_types` _matches_
-    `tinywot_form::allowed_operation_types` (that is, all bits are set
-    within the mask).
-
-  \param[in]  self A [Base Thing].
-  \param[out] form A pointer to the [Form] that matches the supplied
-  conditions.
-  \param[in]  target The submission target.
-  \param[in]  operation_types The target operation type(s).
-  \return
-    - `::TINYWOT_STATUS_SUCCESS` if a [Form] is found. `form` will then
-      be set to point to that [Form].
-    - `::TINYWOT_STATUS_ERROR_NOT_FOUND` if a [Form] is not found. The
-      value of `form` is undefined in this case.
-
-  [Base Thing]: \ref tinywot_thing_base
-  [Form]: \ref tinywot_form
-*/
-static tinywot_status_t tinywot_thing_base_find_form(
-  struct tinywot_thing_base const *self,
-  struct tinywot_form const **form,
-  char const *target,
-  tinywot_operation_type_t operation_types
-) {
-  size_t form_i = 0;
-  struct tinywot_form const *form_i_p = self->forms;
-
-  for (; form_i < self->forms_count_n; form_i += 1) {
-    if (strcmp(form_i_p->target, target) == 0) {
-      /*
-        Determine whether the incoming operation type(s) are all
-        included by the allowed operation types set in form; that is,
-        all bits set in `operation_types` must be also set in
-        `form_i_p->allowed_operation_types`. The expression applies the
-        allowed operation types as a bit mask to the incoming operation
-        type(s), then see if the incoming opeartion type(s) changes. If
-        it does, then there exists at least one bit that is not also set
-        in the allowed operation types.
-      */
-      tinywot_operation_type_t allowed =
-        (form_i_p->allowed_operation_types & operation_types)
-        == operation_types;
-
-      if (allowed) {
-        /*
-          Allow opting-out form pointer receipt to only perform an
-          existence check.
-        */
-        if (form) {
-          *form = form_i_p;
-        }
-
-        return TINYWOT_STATUS_SUCCESS;
-      } else {
-        return TINYWOT_STATUS_ERROR_NOT_ALLOWED;
-      }
-    }
-  }
-
-  return TINYWOT_STATUS_ERROR_NOT_FOUND;
-}
-
-/*!
-  \brief Process a [Request] on a [Base Thing], producing a [Response].
-  \memberof tinywot_thing_base
-  \protected
-
-  This is a simple helper that finds a [Form] based on the supplied
-  [Request] and invokes the handler function associated to the [Form].
-
-  \param[in]  self A [Base Thing].
-  \param[out] response An empty [Response], which will be filled up by
-  the handler function.
-  \param[in]  request A [Request] that is going to be processed.
-  \return Whatever the handler function returns.
-
-  [Base Thing]: \ref tinywot_thing_base
-  [Request]: \ref tinywot_request
-  [Response]: \ref tinywot_response
-  [Form]: \ref tinywot_form
-*/
-static tinywot_status_t tinywot_thing_base_process_request(
-  struct tinywot_thing_base const *self,
-  struct tinywot_response *response,
-  struct tinywot_request *request
-) {
-  struct tinywot_form const *form = NULL;
-  tinywot_status_t status = TINYWOT_STATUS_SUCCESS;
-
-  status = tinywot_thing_base_find_form(
-    self, &form, request->target, request->operation_type
-  );
-
-  if (tinywot_status_is_error(status)) {
-    return status;
-  }
-
-  status = form->handler(response, request, form->context);
-  response->status = tinywot_response_status_from_status(status);
-
-  return status;
-}
-
-/*==================== Public APIs ====================*/
-
-tinywot_response_status_t tinywot_response_status_from_status(
-  tinywot_status_t const status
+enum tinywot_response_status tinywot_response_status_from_tinywot_status(
+  enum tinywot_status const status
 ) {
   switch (status) {
     case TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED:
@@ -146,12 +30,13 @@ tinywot_response_status_t tinywot_response_status_from_status(
       return TINYWOT_RESPONSE_STATUS_OK;
 
     case TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY: /* fall through */
+    case TINYWOT_STATUS_ERROR_GENERIC: /* fall through */
     default:
       return TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR;
   }
 }
 
-tinywot_status_t tinywot_payload_append(
+enum tinywot_status tinywot_payload_append(
   struct tinywot_payload *self,
   void const *data,
   size_t data_size_byte
@@ -170,122 +55,153 @@ tinywot_status_t tinywot_payload_append(
   return TINYWOT_STATUS_SUCCESS;
 }
 
-struct tinywot_form const *tinywot_thing_static_get_forms(
-  struct tinywot_thing_static const *self
+enum tinywot_status tinywot_payload_append_string(
+  struct tinywot_payload *self,
+  char const *str
 ) {
-  return self->base.forms;
+  unsigned char *head = (unsigned char *)(self->content);
+  unsigned char *tail = head + self->content_length_byte;
+
+  if (self->content_length_byte > 0) {
+    /* Remove any (and only) trailing NUL in self->content. */
+    while (*(tail - 1) == '\0') {
+      --tail;
+    }
+  }
+
+  /* The old content without trailing NULs is regarded as a string
+     without any NUL. The pointer difference is then the strlen() of
+     the old string. */
+  ptrdiff_t old_str_len = tail - head;
+  size_t new_str_len = strlen(str);
+
+  /* +1 for the trailing NUL - the result still needs to be a string! */
+  size_t new_content_length_byte = old_str_len + new_str_len + 1;
+
+  if (new_content_length_byte > self->content_buffer_size_byte) {
+    return TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY;
+  }
+
+  /* This is essentially strcpy(tail, str). */
+  memcpy(tail, str, new_str_len + 1);
+  self->content_length_byte = new_content_length_byte;
+
+  return TINYWOT_STATUS_SUCCESS;
 }
 
-size_t tinywot_thing_static_get_forms_count(
-  struct tinywot_thing_static const *self
-) {
-  return self->base.forms_count_n;
-}
-
-tinywot_status_t tinywot_thing_static_find_form(
-  struct tinywot_thing_static const *self,
-  struct tinywot_form const **form,
+enum tinywot_status tinywot_thing_find_form(
+  struct tinywot_thing const *self,
+  struct tinywot_form **form,
   char const *target,
-  tinywot_operation_type_t operation_types
+  enum tinywot_operation_type op
 ) {
-  return tinywot_thing_base_find_form(
-    (struct tinywot_thing_base const *)self, form, target, operation_types
-  );
+  enum tinywot_status status = TINYWOT_STATUS_ERROR_NOT_FOUND;
+
+  /* When count is 0, there is no form added yet, so the status must be
+     NOT_FOUND. */
+  if (self->forms_count_n == 0) {
+    return TINYWOT_STATUS_ERROR_NOT_FOUND;
+  }
+
+  /* Search from the end of self->forms. This allows dynamic override;
+     forms added later would be found first, and thus would have a
+     higher priority.
+
+     When self->forms_count_n cannot be 0, we can always subtract 1 from
+     it. Note that i is an unsigned value, so a condition like i >= 0 is
+     always true to the compiler. i != 0 is equivalent to i > 0. */
+  for (size_t i = self->forms_count_n - 1; i != 0; --i) {
+    struct tinywot_form *form_i = &self->forms[i];
+
+    if (strcmp(form_i->target, target) == 0) {
+      if (form_i->op == op) {
+        /* Both target and op matches. */
+        *form = form_i;
+        status = TINYWOT_STATUS_SUCCESS;
+
+        break;
+      } else {
+        /* Only target matches. However, there could be another separate
+           handler for the specified target and op in the front of the
+           list. We just skip this one now to continue searching, but
+           set the correct status in case there is no more. */
+        status = TINYWOT_STATUS_ERROR_NOT_ALLOWED;
+
+        /* continue; */
+      }
+    } else {
+      /* Continue searching if the target does not match. */
+      /* continue; */
+    }
+  }
+
+  return status;
 }
 
-tinywot_status_t tinywot_thing_static_process_request(
-  struct tinywot_thing_static const *self,
-  struct tinywot_response *response,
-  struct tinywot_request *request
+enum tinywot_status tinywot_thing_add_form(
+  struct tinywot_thing *self, struct tinywot_form const *form
 ) {
-  return tinywot_thing_base_process_request(
-    (struct tinywot_thing_base const *)self, response, request
-  );
+  if (self->forms_count_n + 1 >= self->forms_max_n) {
+    return TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY;
+  }
+
+  /* XXX: this also copies the padding of the supplied tinywot_form,
+     which contains undefined content. */
+  memcpy(&self->forms[self->forms_count_n], form, sizeof(struct tinywot_form));
+  ++self->forms_count_n;
+
+  return TINYWOT_STATUS_SUCCESS;
 }
 
-struct tinywot_form const *tinywot_thing_dynamic_get_forms(
-  struct tinywot_thing_dynamic const *self
-) {
-  return self->base.forms;
-}
-
-size_t tinywot_thing_dynamic_get_forms_count(
-  struct tinywot_thing_dynamic const *self
-) {
-  return self->base.forms_count_n;
-}
-
-size_t tinywot_thing_dynamic_get_forms_max(
-  struct tinywot_thing_dynamic const *self
-) {
-  return self->forms_max_n;
-}
-
-void tinywot_thing_dynamic_set_forms_buffer(
-  struct tinywot_thing_dynamic *self,
-  void *buffer,
-  size_t buffer_size_byte
-) {
-  self->base.forms = buffer;
-  self->base.forms_count_n = 0;
-  self->forms_max_n = buffer_size_byte / sizeof(struct tinywot_thing_dynamic);
-}
-
-tinywot_status_t tinywot_thing_dynamic_find_form(
-  struct tinywot_thing_dynamic const *self,
-  struct tinywot_form const **form,
+enum tinywot_status tinywot_thing_change_form(
+  struct tinywot_thing *self,
   char const *target,
-  tinywot_operation_type_t operation_types
-) {
-  return tinywot_thing_base_find_form(
-    (struct tinywot_thing_base const *)self, form, target, operation_types
-  );
-}
-
-tinywot_status_t tinywot_thing_dynamic_add_form(
-  struct tinywot_thing_dynamic *self, struct tinywot_form const *form
-) {
-  /* not implemented yet */
-  (void)self;
-  (void)form;
-
-  return TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED;
-}
-
-tinywot_status_t tinywot_thing_dynamic_change_form(
-  struct tinywot_thing_dynamic *self,
-  char const *target,
-  tinywot_operation_type_t operation_types,
+  enum tinywot_operation_type op,
   struct tinywot_form const *form
 ) {
-  /* not implemented yet */
-  (void)self;
-  (void)target;
-  (void)operation_types;
-  (void)form;
+  enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
+  struct tinywot_form *form_old = NULL;
 
-  return TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED;
+  status = tinywot_thing_find_form(self, &form_old, target, op);
+  if (status != TINYWOT_STATUS_SUCCESS) {
+    return status;
+  }
+
+  /* XXX: this also copies the padding of the supplied tinywot_form,
+     which contains undefined content. */
+  memcpy(form_old, form, sizeof(struct tinywot_form));
+
+  return TINYWOT_STATUS_SUCCESS;
 }
 
-tinywot_status_t tinywot_thing_dynamic_remove_form(
-  struct tinywot_thing_dynamic *self,
+enum tinywot_status tinywot_thing_remove_form(
+  struct tinywot_thing *self,
   char const *target,
-  tinywot_operation_type_t allowed_operation_types
+  enum tinywot_operation_type op
 ) {
   /* not implemented yet */
   (void)self;
   (void)target;
-  (void)allowed_operation_types;
+  (void)op;
 
   return TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED;
 }
 
-tinywot_status_t tinywot_thing_dynamic_process_request(
-  struct tinywot_thing_dynamic const *self,
+enum tinywot_status tinywot_thing_process_request(
+  struct tinywot_thing const *self,
   struct tinywot_response *response,
   struct tinywot_request *request
 ) {
-  return tinywot_thing_base_process_request(
-    (struct tinywot_thing_base const *)self, response, request
-  );
+  enum tinywot_status status = TINYWOT_STATUS_SUCCESS;
+  struct tinywot_form *form = NULL;
+
+  status = tinywot_thing_find_form(self, &form, request->target, request->op);
+  if (status != TINYWOT_STATUS_SUCCESS) {
+    return status;
+  }
+
+  status = form->handler(&response->payload, &request->payload, form->context);
+  response->status = tinywot_response_status_from_tinywot_status(status);
+
+  return status;
 }
