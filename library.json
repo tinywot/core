@@ -1,13 +1,15 @@
 {
-  "name": "tinywot",
+  "$schema": "https://raw.githubusercontent.com/platformio/platformio-core/develop/platformio/assets/schema/library.json",
+  "name": "tinywot-core",
   "version": "0.3.0-dev",
-  "description": "A W3C Web of Things (WoT) framework targetting resource-constrained embedded devices.",
+  "description": "The platform agnostic core of TinyWoT, a W3C Web of Things (WoT) framework targetting resource-constrained embedded devices",
   "keywords": [
     "webofthings"
   ],
+  "homepage": "https://tinywot.dev",
   "repository": {
     "type": "git",
-    "url": "https://github.com/lmy441900/tinywot"
+    "url": "https://github.com/tinywot/core"
   },
   "authors": [
     {
@@ -18,5 +20,12 @@
     }
   ],
   "license": "MIT",
-  "homepage": "https://www.yhi.moe/projects#tinywot"
+  "headers": [
+    "tinywot/core.h"
+  ],
+  "build": {
+    "flags": [
+      "-std=c99"
+    ]
+  }
 }
