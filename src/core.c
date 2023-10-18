@@ -8,29 +8,36 @@
   \brief TinyWoT Core API implementation.
 */
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <string.h>
 
 #include <tinywot/core.h>
 
+bool tinywot_status_is_error(enum tinywot_status self) {
+  return self <= 0;
+}
+
+bool tinywot_status_is_success(enum tinywot_status self) {
+  return self > 0;
+}
+
 enum tinywot_response_status tinywot_response_status_from_tinywot_status(
   enum tinywot_status const status
 ) {
   switch (status) {
-    case TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED:
-      return TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED;
+    case TINYWOT_STATUS_ERROR_NOT_ALLOWED:
+      return TINYWOT_RESPONSE_STATUS_NOT_ALLOWED;
 
     case TINYWOT_STATUS_ERROR_NOT_FOUND:
       return TINYWOT_RESPONSE_STATUS_NOT_FOUND;
 
-    case TINYWOT_STATUS_ERROR_NOT_ALLOWED:
-      return TINYWOT_RESPONSE_STATUS_NOT_ALLOWED;
+    case TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED:
+      return TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED;
 
     case TINYWOT_STATUS_SUCCESS:
       return TINYWOT_RESPONSE_STATUS_OK;
 
-    case TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY: /* fall through */
-    case TINYWOT_STATUS_ERROR_GENERIC: /* fall through */
     default:
       return TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR;
   }
@@ -192,7 +199,7 @@ enum tinywot_status tinywot_thing_process_request(
   struct tinywot_response *response,
   struct tinywot_request *request
 ) {
-  enum tinywot_status status = TINYWOT_STATUS_SUCCESS;
+  enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
   struct tinywot_form *form = NULL;
 
   status = tinywot_thing_find_form(self, &form, request->target, request->op);

@@ -27,6 +27,7 @@
 #ifndef TINYWOT_CORE_H
 #define TINYWOT_CORE_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -43,25 +44,11 @@ extern "C" {
 */
 enum tinywot_status {
   /*!
-    \brief The function is not implemented.
+    \brief The minimum underlying value of `tinywot_status`.
 
-    This can happen when a target is registered to a `NULL` handler. The
-    handler can also return this to indicate that it's just a stub.
+    This status is invalid.
   */
-  TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED = -14,
-
-  /*!
-    \brief There is insufficient memory to complete an action.
-  */
-  TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY = -12,
-
-  /*!
-    \brief Something is missing.
-
-    This can happen when a requested target and operation type cannot
-    match any handler registered in a Thing.
-  */
-  TINYWOT_STATUS_ERROR_NOT_FOUND = -2,
+  TINYWOT_STATUS_MINIMUM = INT8_MIN,
 
   /*!
     \brief The requested operation is not allowed.
@@ -69,7 +56,28 @@ enum tinywot_status {
     This can happen when a target can be matched, but does not accept
     the operation type requested.
   */
-  TINYWOT_STATUS_ERROR_NOT_ALLOWED = -1,
+  TINYWOT_STATUS_ERROR_NOT_ALLOWED,
+
+  /*!
+    \brief Something is missing.
+
+    This can happen when a requested target and operation type cannot
+    match any handler registered in a Thing.
+  */
+  TINYWOT_STATUS_ERROR_NOT_FOUND,
+
+  /*!
+    \brief The function is not implemented.
+
+    This can happen when a target is registered to a `NULL` handler. The
+    handler can also return this to indicate that it's just a stub.
+  */
+  TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED,
+
+  /*!
+    \brief There is insufficient memory to complete an action.
+  */
+  TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY,
 
   /*!
     \brief A generic error.
@@ -85,8 +93,56 @@ enum tinywot_status {
 
     This is not an error.
   */
-  TINYWOT_STATUS_SUCCESS = 1,
+  TINYWOT_STATUS_SUCCESS,
+
+  /*!
+    \brief The end of stream (EOS) has been reached.
+  */
+  TINYWOT_STATUS_END_OF_STREAM,
+
+  /*!
+    \brief The operation has been successful, but not all work has been
+    done; it hasn't been completed yet.
+
+    Depending on the context, the caller is given the chance to perform
+    some action on the already returned data, then call the same
+    function again, with the right arguments to carry on, until either
+    `TINYWOT_STATUS_SUCCESS` or `TINYWOT_STATUS_END_OF_STREAM` is
+    received, when there is no more data to process.
+  */
+  TINYWOT_STATUS_NOT_FINISHED,
+
+  /*!
+    \brief The maximum underlying value of `tinywot_status`.
+
+    This status is invalid.
+  */
+  TINYWOT_STATUS_MAXIMUM = INT8_MAX,
 };
+
+/*!
+  \brief Check if the supplied `tinywot_status` hints an error.
+  \memberof tinywot_status
+
+  Negative values are reserved for error statuses, so this function
+  merely checks if the underlying value is less than or equal to `0`.
+
+  \param[in] self A `tinywot_status`.
+  \return `true` if `self` is an error, `false` otherwise.
+*/
+bool tinywot_status_is_error(enum tinywot_status self);
+
+/*!
+  \brief Check if the supplied `tinywot_status` hints a success.
+  \memberof tinywot_status
+
+  Positive values are reserved for success statuses, so this function
+  merely checks if the underlying value is greater than `0`.
+
+  \param[in] self A `tinywot_status`.
+  \return `true` if `self` is a success, `false` otherwise.
+*/
+bool tinywot_status_is_success(enum tinywot_status self);
 
 /*!
   \brief Operation types.
@@ -229,19 +285,26 @@ enum tinywot_operation_type {
 */
 enum tinywot_response_status {
   /*!
+    \brief The minimum underlying value of `tinywot_response_status`.
+
+    This status is invalid.
+  */
+  TINYWOT_RESPONSE_STATUS_MINIMUM = INT8_MIN,
+
+  /*!
     \brief The function is not implemented.
   */
-  TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED = -14,
+  TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED,
 
   /*!
     \brief Something is missing.
   */
-  TINYWOT_RESPONSE_STATUS_NOT_FOUND = -2,
+  TINYWOT_RESPONSE_STATUS_NOT_FOUND,
 
   /*!
     \brief The requested operation is not allowed.
   */
-  TINYWOT_RESPONSE_STATUS_NOT_ALLOWED = -1,
+  TINYWOT_RESPONSE_STATUS_NOT_ALLOWED,
 
   /*!
     \brief A generic error.
@@ -249,9 +312,16 @@ enum tinywot_response_status {
   TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR = 0,
 
   /*!
-    \brief The operation is successful.
+    \brief The operation has been completed and successful.
   */
-  TINYWOT_RESPONSE_STATUS_OK = 1,
+  TINYWOT_RESPONSE_STATUS_OK,
+
+  /*!
+    \brief The maximum underlying value of `tinywot_response_status`.
+
+    This status is invalid.
+  */
+  TINYWOT_RESPONSE_STATUS_MAXIMUM = INT8_MAX,
 };
 
 /*!
@@ -337,7 +407,7 @@ enum tinywot_status tinywot_payload_append_string(
   \brief The size of buffer reserved for `tinywot_request::target`.
 */
 #ifndef TINYWOT_REQUEST_TARGET_BUFFER_SIZE_BYTE
-#define TINYWOT_REQUEST_TARGET_BUFFER_SIZE_BYTE (32U)
+#define TINYWOT_REQUEST_TARGET_BUFFER_SIZE_BYTE (64U)
 #endif
 
 /*!
@@ -417,6 +487,16 @@ typedef enum tinywot_status tinywot_form_handler_t(
   \brief An operation endpoint.
 */
 struct tinywot_form {
+  /*!
+    \brief The name of affordance that this form is attached to.
+
+    For a top-level form, this field should be set to `NULL`.
+
+    This field is so far informative only -- no procedure relies on its
+    value. In the future, however, this field may be useful.
+  */
+  char const *name;
+
   /*!
     \brief The submission target of the form.
 
@@ -613,6 +693,70 @@ enum tinywot_status tinywot_thing_process_request(
   struct tinywot_response *response,
   struct tinywot_request *request
 );
+
+/*!
+  \brief Standard general type for TinyWoT input / output modules.
+*/
+struct tinywot_io {
+  /*!
+    \brief A pointer to an arbitrary data structure.
+  */
+  void *context;
+
+  /*!
+    \brief Function that reads data into a memory buffer.
+  */
+  enum tinywot_status (*read)(
+    void *context,
+    unsigned char *buffer,
+    size_t buffer_size_byte,
+    size_t *read_length_byte
+  );
+
+  /*!
+    \brief Function that writes data from a memory buffer.
+  */
+  enum tinywot_status (*write)(
+    void *context,
+    unsigned char *buffer,
+    size_t write_length_byte,
+    size_t *written_length_byte
+  );
+};
+
+/*!
+  \brief Standard general type for TinyWoT protocol implementation
+  modules.
+*/
+struct tinywot_protocol {
+  /*!
+    \brief A pointer to an arbitrary data structure.
+  */
+  void *context;
+
+  /*!
+    \brief Function that converts the data in a memory buffer to a
+    `tinywot_request`.
+  */
+  enum tinywot_status (*receive)(
+    void *context,
+    struct tinywot_request *request,
+    unsigned char *buffer,
+    size_t receive_length_byte
+  );
+
+  /*!
+    \brief Function that converts a `tinywot_response` to a series of
+    bytes in a memory buffer.
+  */
+  enum tinywot_status (*send)(
+    void *context,
+    struct tinywot_response *response,
+    unsigned char *buffer,
+    size_t buffer_size_byte,
+    size_t *sent_length_byte
+  );
+};
 
 #ifdef __cplusplus
 } /* extern "C" */
