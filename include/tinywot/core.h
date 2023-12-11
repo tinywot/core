@@ -38,17 +38,50 @@ extern "C" {
 /*!
   \brief Status codes.
 
-  These are return values used and recognized across the library. Raw
-  values of enumerations are (usually) `int`, with negative values
-  reserved for errors and positive values reserved for successes.
+  These are return values used and recognized across the library. Values
+  between 1 and 127 are general status codes. Values between 128 and 255
+  indicate errors. 0 is an undefined value that is regarded as an error
+  when encountered.
 */
 enum tinywot_status {
   /*!
-    \brief The minimum underlying value of `tinywot_status`.
+    \brief An undefined status.
 
-    This status is invalid.
+    This can be used to initialize a `tinywot_status` variable, but is
+    seen as an error across the library.
   */
-  TINYWOT_STATUS_MINIMUM = INT8_MIN,
+  TINYWOT_STATUS_UNKNOWN = 0x00,
+
+  /*!
+    \brief The operation has been successful.
+  */
+  TINYWOT_STATUS_SUCCESS,
+
+  /*!
+    \brief The end of stream (EOS) has been reached.
+  */
+  TINYWOT_STATUS_END_OF_STREAM,
+
+  /*!
+    \brief The operation has been successful, but not all work has been
+    done; it hasn't been fully completed yet.
+
+    Depending on the context, the caller is given the chance to perform
+    some action on the already returned data, then call the same
+    function again, with the right arguments to carry on, until either
+    `TINYWOT_STATUS_SUCCESS` or `TINYWOT_STATUS_END_OF_STREAM` is
+    received, when there is no more data to process.
+  */
+  TINYWOT_STATUS_NOT_FINISHED,
+
+  /*!
+    \brief A generic error.
+
+    This can be used when no other error codes can express the error.
+    Applications and libraries should try to use other error codes when
+    possible.
+  */
+  TINYWOT_STATUS_ERROR_GENERIC = 0x80,
 
   /*!
     \brief The requested operation is not allowed.
@@ -68,9 +101,6 @@ enum tinywot_status {
 
   /*!
     \brief The function is not implemented.
-
-    This can happen when a target is registered to a `NULL` handler. The
-    handler can also return this to indicate that it's just a stub.
   */
   TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED,
 
@@ -78,71 +108,16 @@ enum tinywot_status {
     \brief There is insufficient memory to complete an action.
   */
   TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY,
-
-  /*!
-    \brief A generic error.
-
-    This can be used when no other error codes can express the error. It
-    can also be used as an initial value of the type (as it has the
-    underlying value of `0`).
-  */
-  TINYWOT_STATUS_ERROR_GENERIC = 0,
-
-  /*!
-    \brief The operation is successful.
-
-    This is not an error.
-  */
-  TINYWOT_STATUS_SUCCESS,
-
-  /*!
-    \brief The end of stream (EOS) has been reached.
-  */
-  TINYWOT_STATUS_END_OF_STREAM,
-
-  /*!
-    \brief The operation has been successful, but not all work has been
-    done; it hasn't been completed yet.
-
-    Depending on the context, the caller is given the chance to perform
-    some action on the already returned data, then call the same
-    function again, with the right arguments to carry on, until either
-    `TINYWOT_STATUS_SUCCESS` or `TINYWOT_STATUS_END_OF_STREAM` is
-    received, when there is no more data to process.
-  */
-  TINYWOT_STATUS_NOT_FINISHED,
-
-  /*!
-    \brief The maximum underlying value of `tinywot_status`.
-
-    This status is invalid.
-  */
-  TINYWOT_STATUS_MAXIMUM = INT8_MAX,
 };
 
 /*!
   \brief Check if the supplied `tinywot_status` hints an error.
   \memberof tinywot_status
 
-  Negative values are reserved for error statuses, so this function
-  merely checks if the underlying value is less than or equal to `0`.
-
   \param[in] self A `tinywot_status`.
   \return `true` if `self` is an error, `false` otherwise.
 */
 bool tinywot_status_is_error(enum tinywot_status self);
-
-/*!
-  \brief Check if the supplied `tinywot_status` hints a success.
-  \memberof tinywot_status
-
-  Positive values are reserved for success statuses, so this function
-  merely checks if the underlying value is greater than `0`.
-
-  \param[in] self A `tinywot_status`.
-  \return `true` if `self` is a success, `false` otherwise.
-*/
-bool tinywot_status_is_success(enum tinywot_status self);
 
 /*!
   \brief Operation types.
@@ -285,11 +260,20 @@ enum tinywot_operation_type {
 */
 enum tinywot_response_status {
   /*!
-    \brief The minimum underlying value of `tinywot_response_status`.
-
-    This status is invalid.
+    \brief A default, invalid value reserved for variable
+    initialization.
   */
-  TINYWOT_RESPONSE_STATUS_MINIMUM = INT8_MIN,
+  TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
+
+  /*!
+    \brief The operation has been completed and successful.
+  */
+  TINYWOT_RESPONSE_STATUS_OK,
+
+  /*!
+    \brief A generic error.
+  */
+  TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR,
 
   /*!
     \brief The function is not implemented.
@@ -305,23 +289,6 @@ enum tinywot_response_status {
     \brief The requested operation is not allowed.
   */
   TINYWOT_RESPONSE_STATUS_NOT_ALLOWED,
-
-  /*!
-    \brief A generic error.
-  */
-  TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR = 0,
-
-  /*!
-    \brief The operation has been completed and successful.
-  */
-  TINYWOT_RESPONSE_STATUS_OK,
-
-  /*!
-    \brief The maximum underlying value of `tinywot_response_status`.
-
-    This status is invalid.
-  */
-  TINYWOT_RESPONSE_STATUS_MAXIMUM = INT8_MAX,
 };
 
 /*!

@@ -15,11 +15,7 @@
 #include <tinywot/core.h>
 
 bool tinywot_status_is_error(enum tinywot_status self) {
-  return self <= 0;
-}
-
-bool tinywot_status_is_success(enum tinywot_status self) {
-  return self > 0;
+  return self == 0 || self > 0x7f;
 }
 
 enum tinywot_response_status tinywot_response_status_from_tinywot_status(
