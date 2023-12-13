@@ -14,6 +14,107 @@
 #include <tinywot/core.h>
 #include <unity.h>
 
+#include "tinywot-test.h"
+
+/* application/json */
+static unsigned int const example_thing_content_type = 50;
+
+static char const example_thing_on_response[] = "true";
+static char const example_thing_off_response[] = "false";
+
+static bool example_thing_is_on = false;
+
+enum tinywot_status handler_property_status_read(
+  struct tinywot_payload *res, struct tinywot_payload *req, void *context
+) {
+  (void)context;
+  (void)req;
+
+  res->content_type = example_thing_content_type;
+  res->content_length_byte = example_thing_is_on ?
+      sizeof(example_thing_on_response) : sizeof(example_thing_off_response);
+
+  if (res->content_buffer_size_byte == 0) {
+    res->content = (char *)(example_thing_is_on ?
+      example_thing_on_response : example_thing_off_response);
+  } else if (res->content_buffer_size_byte > res->content_length_byte) {
+    memcpy(
+      res->content,
+      example_thing_is_on ?
+        example_thing_on_response : example_thing_off_response,
+      res->content_length_byte
+    );
+  } else {
+    return TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY;
+  }
+
+  return TINYWOT_STATUS_SUCCESS;
+}
+
+enum tinywot_status handler_property_status_write(
+  struct tinywot_payload *res, struct tinywot_payload *req, void *context
+) {
+  (void)context;
+
+  if (req->content_type != example_thing_content_type ||
+      (req->content_length_byte != 4 && req->content_length_byte != 5)) {
+    return TINYWOT_STATUS_ERROR_GENERIC; /* TODO: invalid parameter */
+  }
+
+  if (memcmp(example_thing_on_response,
+    req->content,
+    sizeof(example_thing_on_response)
+  )) {
+    example_thing_is_on = true;
+  } else if (memcmp(example_thing_off_response,
+    req->content,
+    sizeof(example_thing_off_response)
+  )) {
+    example_thing_is_on = false;
+  } else {
+    return TINYWOT_STATUS_ERROR_GENERIC; /* TODO: invalid parameter */
+  }
+
+  return handler_property_status_read(res, req, context);
+}
+
+enum tinywot_status handler_action_toggle(
+  struct tinywot_payload *res, struct tinywot_payload *req, void *context
+) {
+  (void)context;
+
+  example_thing_is_on = !example_thing_is_on;
+
+  return handler_property_status_read(res, req, context);
+}
+
+static struct tinywot_form const tinywot_test_forms[] = {
+  {
+    .name = "status",
+    .target = "/status",
+    .op = TINYWOT_OPERATION_TYPE_READPROPERTY,
+    .handler = handler_property_status_read,
+    .context = NULL,
+  },
+  {
+    .name = "status",
+    .target = "/status",
+    .op = TINYWOT_OPERATION_TYPE_WRITEPROPERTY,
+    .handler = handler_property_status_write,
+    .context = NULL,
+  },
+  {
+    .name = "toggle",
+    .target = "/toggle",
+    .op = TINYWOT_OPERATION_TYPE_INVOKEACTION,
+    .handler = handler_action_toggle,
+    .context = NULL,
+  },
+};
+
+static size_t const tinywot_test_forms_count =
+  sizeof(tinywot_test_forms) / sizeof(struct tinywot_form);
+
 void tinywot_test_free(void *mem) {
   free(mem);
 }
@@ -51,17 +152,26 @@ struct tinywot_payload *tinywot_test_tinywot_payload_new(size_t size) {
 }
 
 void tinywot_test_tinywot_thing_delete(struct tinywot_thing *thing) {
+  tinywot_test_free(thing->forms);
   tinywot_test_free(thing);
 }
 
 struct tinywot_thing *tinywot_test_tinywot_thing_new(void) {
-  return tinywot_test_malloc0(sizeof(struct tinywot_thing));
+  struct tinywot_thing *thing =
+    tinywot_test_malloc0(sizeof(struct tinywot_thing));
+
+  thing->forms = tinywot_test_mallocd(sizeof(tinywot_test_forms));
+  thing->forms_max_n = tinywot_test_forms_count;
+
+  return thing;
 }
 
 struct tinywot_thing *tinywot_test_tinywot_thing_new_example(void) {
   struct tinywot_thing *thing = tinywot_test_tinywot_thing_new();
 
-  /* TODO */
+  /* names and targets are still kept static const. */
+  memcpy(thing->forms, tinywot_test_forms, sizeof(tinywot_test_forms));
+  thing->forms_count_n = tinywot_test_forms_count;
 
   return thing;
 }
