@@ -112,9 +112,12 @@ enum tinywot_status tinywot_thing_find_form(
 
      When self->forms_count_n cannot be 0, we can always subtract 1 from
      it. Note that i is an unsigned value, so a condition like i >= 0 is
-     always true to the compiler. i != 0 is equivalent to i > 0. */
-  for (size_t i = self->forms_count_n - 1; i != 0; --i) {
-    struct tinywot_form *form_i = &self->forms[i];
+     always true to the compiler. To properly terminate the loop, we
+     write i != 0 as the loop continuing condition, which is equivalent
+     to i > 0. Inside the loop, we subtract 1 to obtain the array index.
+     */
+  for (size_t i = self->forms_count_n; i != 0; --i) {
+    struct tinywot_form *form_i = &self->forms[i - 1];
 
     if (strcmp(form_i->target, target) == 0) {
       if (form_i->op == op) {
