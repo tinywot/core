@@ -29,7 +29,7 @@ static void tinywot_thing_find_form_should_succeed(void) {
   tinywot_test_tinywot_thing_delete(thing);
 }
 
-static void tinywot_thing_find_form_should_fail_when_not_found(void) {
+static void tinywot_thing_find_form_should_fail_when_target_mismatch(void) {
   enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
   struct tinywot_thing *thing = tinywot_test_tinywot_thing_new_example();
   struct tinywot_form *form = NULL;
@@ -44,6 +44,21 @@ static void tinywot_thing_find_form_should_fail_when_not_found(void) {
   tinywot_test_tinywot_thing_delete(thing);
 }
 
+static void tinywot_thing_find_form_should_fail_when_op_mismatch(void) {
+  enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
+  struct tinywot_thing *thing = tinywot_test_tinywot_thing_new_example();
+  struct tinywot_form *form = NULL;
+
+  status = tinywot_thing_find_form(
+    thing, &form, "/status", TINYWOT_OPERATION_TYPE_INVOKEACTION
+  );
+
+  TEST_ASSERT_EQUAL(TINYWOT_STATUS_ERROR_NOT_ALLOWED, status);
+  TEST_ASSERT_NULL(form);
+
+  tinywot_test_tinywot_thing_delete(thing);
+}
+
 void setUp(void) {}
 void tearDown(void) {}
 
@@ -51,7 +66,8 @@ int main(void) {
   UNITY_BEGIN();
 
   RUN_TEST(tinywot_thing_find_form_should_succeed);
-  RUN_TEST(tinywot_thing_find_form_should_fail_when_not_found);
+  RUN_TEST(tinywot_thing_find_form_should_fail_when_target_mismatch);
+  RUN_TEST(tinywot_thing_find_form_should_fail_when_op_mismatch);
 
   return UNITY_END();
 }
