@@ -147,14 +147,14 @@ enum tinywot_status tinywot_thing_find_form(
 enum tinywot_status tinywot_thing_add_form(
   struct tinywot_thing *self, struct tinywot_form const *form
 ) {
-  if (self->forms_count_n + 1 >= self->forms_max_n) {
+  if (self->forms_count_n + 1 > self->forms_max_n) {
     return TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY;
   }
 
   /* XXX: this also copies the padding of the supplied tinywot_form,
      which contains undefined content. */
   memcpy(&self->forms[self->forms_count_n], form, sizeof(struct tinywot_form));
-  ++self->forms_count_n;
+  self->forms_count_n += 1;
 
   return TINYWOT_STATUS_SUCCESS;
 }
