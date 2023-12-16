@@ -28,7 +28,7 @@ static unsigned char const lidsamet[] = {
 
 static void tinywot_payload_append_should_succeed(void) {
   struct tinywot_payload *pl =
-    tinywot_test_tinywot_payload_new(TINYWOT_TEST_MEMORY_SIZE_BYTE);
+    tinywot_test_payload_new(TINYWOT_TEST_MEMORY_SIZE_BYTE);
   enum tinywot_status sc = TINYWOT_STATUS_ERROR_GENERIC;
 
   /* initial state */
@@ -60,12 +60,12 @@ static void tinywot_payload_append_should_succeed(void) {
   TEST_ASSERT_EQUAL_UINT(sizeof(lidsamet), pl->content_length_byte);
   TEST_ASSERT_EQUAL_UINT(0U, pl->content_type);
 
-  tinywot_test_tinywot_payload_delete(pl);
+  tinywot_test_payload_delete(pl);
 }
 
 static void tinywot_payload_append_should_fail_when_no_enough_memory(void) {
   struct tinywot_payload *pl =
-    tinywot_test_tinywot_payload_new(TINYWOT_TEST_SMALL_MEMORY_SIZE_BYTE);
+    tinywot_test_payload_new(TINYWOT_TEST_SMALL_MEMORY_SIZE_BYTE);
   enum tinywot_status sc = TINYWOT_STATUS_ERROR_GENERIC;
 
   /* initial state */
@@ -97,7 +97,7 @@ static void tinywot_payload_append_should_fail_when_no_enough_memory(void) {
   TEST_ASSERT_EQUAL_UINT(sizeof(lipsum), pl->content_length_byte);
   TEST_ASSERT_EQUAL_UINT(0U, pl->content_type);
 
-  tinywot_test_tinywot_payload_delete(pl);
+  tinywot_test_payload_delete(pl);
 }
 
 void setUp(void) {}

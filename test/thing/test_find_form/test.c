@@ -16,7 +16,7 @@
 
 static void tinywot_thing_find_form_should_succeed(void) {
   enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
-  struct tinywot_thing *thing = tinywot_test_tinywot_thing_new_example();
+  struct tinywot_thing *thing = tinywot_test_thing_new_example();
   struct tinywot_form *form = NULL;
 
   status = tinywot_thing_find_form(
@@ -26,12 +26,12 @@ static void tinywot_thing_find_form_should_succeed(void) {
   TEST_ASSERT_EQUAL(TINYWOT_STATUS_SUCCESS, status);
   TEST_ASSERT_NOT_NULL(form);
 
-  tinywot_test_tinywot_thing_delete(thing);
+  tinywot_test_thing_delete(thing);
 }
 
 static void tinywot_thing_find_form_should_fail_when_target_mismatch(void) {
   enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
-  struct tinywot_thing *thing = tinywot_test_tinywot_thing_new_example();
+  struct tinywot_thing *thing = tinywot_test_thing_new_example();
   struct tinywot_form *form = NULL;
 
   status = tinywot_thing_find_form(
@@ -41,12 +41,12 @@ static void tinywot_thing_find_form_should_fail_when_target_mismatch(void) {
   TEST_ASSERT_EQUAL(TINYWOT_STATUS_ERROR_NOT_FOUND, status);
   TEST_ASSERT_NULL(form);
 
-  tinywot_test_tinywot_thing_delete(thing);
+  tinywot_test_thing_delete(thing);
 }
 
 static void tinywot_thing_find_form_should_fail_when_op_mismatch(void) {
   enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
-  struct tinywot_thing *thing = tinywot_test_tinywot_thing_new_example();
+  struct tinywot_thing *thing = tinywot_test_thing_new_example();
   struct tinywot_form *form = NULL;
 
   status = tinywot_thing_find_form(
@@ -56,7 +56,7 @@ static void tinywot_thing_find_form_should_fail_when_op_mismatch(void) {
   TEST_ASSERT_EQUAL(TINYWOT_STATUS_ERROR_NOT_ALLOWED, status);
   TEST_ASSERT_NULL(form);
 
-  tinywot_test_tinywot_thing_delete(thing);
+  tinywot_test_thing_delete(thing);
 }
 
 void setUp(void) {}
