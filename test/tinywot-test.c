@@ -110,6 +110,20 @@ static struct tinywot_form const tinywot_test_forms[] = {
     .handler = handler_action_toggle,
     .context = NULL,
   },
+  {
+    .name = "overheating",
+    .target = "/oh",
+    .op = TINYWOT_OPERATION_TYPE_SUBSCRIBEEVENT,
+    .handler = NULL,
+    .context = NULL,
+  },
+  {
+    .name = "overheating",
+    .target = "/oh",
+    .op = TINYWOT_OPERATION_TYPE_UNSUBSCRIBEEVENT,
+    .handler = NULL,
+    .context = NULL,
+  },
 };
 
 void tinywot_test_free(void *mem) {
