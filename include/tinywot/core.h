@@ -532,6 +532,86 @@ struct tinywot_thing {
 };
 
 /*!
+  \brief Initialize a `tinywot_thing` with a static list of forms.
+  \memberof tinywot_thing
+
+  If you have a list of `tinywot_form`s declared in a `static const`
+  array, then this helps correctly setting up a `tinywot_thing`. The
+  `tinywot_thing` initialized in this way should prevent any later
+  modification from method calls, e.g. `tinywot_thing_change_form()`.
+
+  Note that:
+
+  - `forms` is only shallow copied, so it must point to `'static`
+    memory. Otherwise, a dangling pointer would be used.
+  - `forms_size_byte` is the size of `forms` in byte, not the number of
+    `tinywot_forms` in the array. Most often, this should just be
+    `sizeof(forms)` (when `forms` is still `struct tinywot_form []`).
+
+  \param[inout] self An instance of `tinywot_thing`.
+  \param[in] forms An array of `tinywot_form` in ROM.
+  \param[in] forms_size_byte The size of `forms` in byte.
+*/
+void tinywot_thing_init_static(
+  struct tinywot_thing *self,
+  struct tinywot_form const *forms,
+  size_t forms_size_byte
+);
+
+/*!
+  \brief Initialize a `tinywot_thing` with Randomly Accessible Memory
+  (RAM).
+  \memberof tinywot_thing
+
+  If you want to add, change and remove `tinywot_form`s interactively,
+  then this helps correctly setting up a `tinywot_thing`. The
+  `tinywot_thing` initialized in this way allows all methods that change
+  the list of forms of a `tinywot_thing`.
+
+  `memory` is seen as blank memory with `0` forms.
+
+  \param[inout] self An instance of `tinywot_thing`.
+  \param[in] memory A pointer to any segment of RAM.
+  \param[in] memory_size_byte The size of `memory` in byte.
+*/
+void tinywot_thing_init_dynamic(
+  struct tinywot_thing *self, void *memory, size_t memory_size_byte
+);
+
+/*!
+  \brief Initialize a `tinywot_thing` with Randomly Accessible Memory
+  (RAM), then copy a static list of forms into the RAM.
+  \memberof tinywot_thing
+
+  If you want to initialize a dynamic (changable) `tinywot_thing` out of
+  a pre-defined list of `tinywot_form`s, then this helps correctly
+  setting up a `tinywot_thing`.
+
+  Memory pointed by `forms` will be copied to memory pointed by
+  `memory`. Note that in this way `tinywot_form::name` and
+  `tinywot_form::target` are only shallow copied, but this is by design
+  as they are required to be `const char`. `forms` does not have to
+  point to ROM either, as it is copied to `memory`.
+
+  \param[inout] self An instance of `tinywot_thing`.
+  \param[in] memory A pointer to any segment of RAM.
+  \param[in] memory_size_byte The size of `memory` in byte.
+  \param[in] forms An array of `tinywot_form` in ROM or RAM.
+  \param[in] forms_size_byte The size of `forms` in byte.
+  \return
+    - `::TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY` if `memory_size_byte`
+      is smaller than `forms_size_byte`.
+    - `::TINYWOT_STATUS_SUCCESS` if the initialization succeeds.
+*/
+enum tinywot_status tinywot_thing_init_dynamic_from_static(
+  struct tinywot_thing *self,
+  void *memory,
+  size_t memory_size_byte,
+  struct tinywot_form const *forms,
+  size_t forms_size_byte
+);
+
+/*!
   \brief Find a `tinywot_form` registered in the `tinywot_thing`.
   \memberof tinywot_thing
 

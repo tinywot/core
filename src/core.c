@@ -92,6 +92,44 @@ enum tinywot_status tinywot_payload_append_string(
   return TINYWOT_STATUS_SUCCESS;
 }
 
+void tinywot_thing_init_static(
+  struct tinywot_thing *self,
+  struct tinywot_form const *forms,
+  size_t forms_size_byte
+) {
+  self->forms = (struct tinywot_form *)forms;
+  self->forms_count_n = forms_size_byte / sizeof(struct tinywot_form);
+  self->forms_max_n = 0;
+}
+
+void tinywot_thing_init_dynamic(
+  struct tinywot_thing *self, void *memory, size_t memory_size_byte
+) {
+  self->forms = (struct tinywot_form *)memory;
+  self->forms_count_n = 0;
+  self->forms_max_n = memory_size_byte / sizeof(struct tinywot_form);
+}
+
+enum tinywot_status tinywot_thing_init_dynamic_from_static(
+  struct tinywot_thing *self,
+  void *memory,
+  size_t memory_size_byte,
+  struct tinywot_form const *forms,
+  size_t forms_size_byte
+) {
+  if (forms_size_byte > memory_size_byte) {
+    return TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY;
+  }
+
+  memcpy(memory, forms, forms_size_byte);
+
+  self->forms = (struct tinywot_form *)memory;
+  self->forms_count_n = forms_size_byte / sizeof(struct tinywot_form);
+  self->forms_max_n = memory_size_byte / sizeof(struct tinywot_form);
+
+  return TINYWOT_STATUS_SUCCESS;
+}
+
 enum tinywot_status tinywot_thing_find_form(
   struct tinywot_thing const *self,
   struct tinywot_form **form,
