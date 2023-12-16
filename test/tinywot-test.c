@@ -112,9 +112,6 @@ static struct tinywot_form const tinywot_test_forms[] = {
   },
 };
 
-static size_t const tinywot_test_forms_count =
-  sizeof(tinywot_test_forms) / sizeof(struct tinywot_form);
-
 void tinywot_test_free(void *mem) {
   free(mem);
 }
@@ -160,18 +157,28 @@ struct tinywot_thing *tinywot_test_tinywot_thing_new(void) {
   struct tinywot_thing *thing =
     tinywot_test_malloc0(sizeof(struct tinywot_thing));
 
-  thing->forms = tinywot_test_mallocd(sizeof(tinywot_test_forms));
-  thing->forms_max_n = tinywot_test_forms_count;
+  tinywot_thing_init_dynamic(
+    thing,
+    tinywot_test_mallocd(sizeof(tinywot_test_forms)),
+    sizeof(tinywot_test_forms)
+  );
 
   return thing;
 }
 
 struct tinywot_thing *tinywot_test_tinywot_thing_new_example(void) {
-  struct tinywot_thing *thing = tinywot_test_tinywot_thing_new();
+  struct tinywot_thing *thing =
+    tinywot_test_malloc0(sizeof(struct tinywot_thing));
 
-  /* names and targets are still kept static const. */
-  memcpy(thing->forms, tinywot_test_forms, sizeof(tinywot_test_forms));
-  thing->forms_count_n = tinywot_test_forms_count;
+  /* Obviously memory size and forms array size are the same, so we can
+     ignore this only way of failure from this function. */
+  (void) tinywot_thing_init_dynamic_from_static(
+    thing,
+    tinywot_test_mallocd(sizeof(tinywot_test_forms)),
+    sizeof(tinywot_test_forms),
+    tinywot_test_forms,
+    sizeof(tinywot_test_forms)
+  );
 
   return thing;
 }
