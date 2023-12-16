@@ -240,12 +240,21 @@ enum tinywot_status tinywot_thing_process_request(
   struct tinywot_form *form = NULL;
 
   status = tinywot_thing_find_form(self, &form, request->target, request->op);
-  if (status != TINYWOT_STATUS_SUCCESS) {
-    return status;
+
+  /* If a matching form is found, then we further allow it to change the
+     response (if it has been implemented). */
+  if (status == TINYWOT_STATUS_SUCCESS) {
+    status = form->handler ?
+      form->handler(&response->payload, &request->payload, form->context) :
+      TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED;
   }
 
-  status = form->handler(&response->payload, &request->payload, form->context);
+  /* Convert the (TinyWoT) status to a response status, which comes from
+     either tinywot_thing_find_form(), form->handler(), or ourselves
+     (NOT_IMPLEMENTED). */
   response->status = tinywot_response_status_from_tinywot_status(status);
 
-  return status;
+  /* Technically, this function has successfully prepared a response, so
+     there is no need to forward an error. */
+  return TINYWOT_STATUS_SUCCESS;
 }
