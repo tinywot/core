@@ -18,7 +18,7 @@ static char const target_status_str[] = "/status";
 static char const target_lorem_str[] = "/lorem";
 static char const target_overheating_str[] = "/oh";
 
-void tinywot_process_request_should_succeed(void) {
+static void tinywot_process_request_should_succeed(void) {
   enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
   struct tinywot_thing *thing = tinywot_test_thing_new_example();
 
@@ -59,7 +59,7 @@ void tinywot_process_request_should_succeed(void) {
   tinywot_test_thing_delete(thing);
 }
 
-void tinywot_process_request_should_succeed_when_op_mismatch(void) {
+static void tinywot_process_request_should_succeed_when_op_mismatch(void) {
   enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
   struct tinywot_thing *thing = tinywot_test_thing_new_example();
 
@@ -103,7 +103,7 @@ void tinywot_process_request_should_succeed_when_op_mismatch(void) {
   tinywot_test_thing_delete(thing);
 }
 
-void tinywot_process_request_should_succeed_when_not_found(void) {
+static void tinywot_process_request_should_succeed_when_not_found(void) {
   enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
   struct tinywot_thing *thing = tinywot_test_thing_new_example();
 
@@ -148,7 +148,7 @@ void tinywot_process_request_should_succeed_when_not_found(void) {
   tinywot_test_thing_delete(thing);
 }
 
-void tinywot_process_request_should_succeed_when_not_implemented(void) {
+static void tinywot_process_request_should_succeed_when_not_implemented(void) {
   enum tinywot_status status = TINYWOT_STATUS_ERROR_GENERIC;
   struct tinywot_thing *thing = tinywot_test_thing_new_example();
 
