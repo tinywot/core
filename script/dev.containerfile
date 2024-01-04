@@ -1,44 +1,41 @@
-# Standard development environment for TinyWoT Core.
+# Recipe for building the standard development environment for TinyWoT Core.
 #
-# SPDX-FileCopyrightText: 2023 Junde Yhi <junde@yhi.moe>
+# SPDX-FileCopyrightText: 2023-2024 Junde Yhi <junde@yhi.moe>
 # SPDX-License-Identifier: MIT
 
 FROM ubuntu:22.04
 
-ENV PATH="/root/.local/bin:$PATH"
+# These parameters specify the normal user to create in the container.
+ARG USER=user
+ARG GROUP=user
+ARG SHELL=/bin/bash
+ARG UID=1000
+ARG GID=1000
 
-# Install packages provided by Ubuntu.
+# With root, install system-wide packages provided by Ubuntu.
 RUN apt-get update --yes && \
 apt-get install --yes pipx gcc gdb && \
 rm --force --recursive /var/lib/apt/lists/*
 
-# Install packages from PyPI.
+# Create a normal user.
+RUN groupadd --gid $GID $GROUP && \
+useradd --uid $UID --gid $GID --shell $SHELL --create-home $USER
+
+# Switch to this normal user.
+WORKDIR /home/$USER
+USER $UID:$GID
+
+# Prepend PATH where PipX places executables.
+ENV PATH="/home/$USER/.local/bin:$PATH"
+
+# Install Python packages.
 RUN pipx install platformio && pipx install reuse
 
-# Set up PlatformIO.
+# Tweak PlatformIO.
 RUN platformio settings set check_platformio_interval 999999 && \
-platformio settings set enable_cache no && \
-platformio settings set enable_telemetry no
+platformio settings set projects_dir /home/$USER
 
-# Pre-install packages from PlatformIO Registry, so that the subsequent
-# operations can be carried out without Internet.
-#
-# Version constraints of the first few tools are from
-# platformio/__init__.py: the registry may already have newer versions,
-# but PlatformIO doesn't want to use.
-RUN platformio pkg install --global \
---tool platformio/contrib-piohome@~3.4.2 \
---tool contrib-pioremote@~1.0.0 \
---tool platformio/tool-scons@~4.40502.0 \
---tool platformio/tool-cppcheck@~1.21100.0 \
---platform platformio/native \
---platform platformio/atmelavr \
---tool platformio/toolchain-atmelavr \
---tool platformio/framework-arduino-avr \
-# Required by (platform) platformio/atmelavr
---tool platformio/tool-avrdude@~1.60300.0
-
-# Open this port for PlatformIO Home.
+# In case one wants to use PlatformIO Home.
 EXPOSE 8008
 
 LABEL org.opencontainers.image.title="TinyWoT Core Dev Container" \
