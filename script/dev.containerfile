@@ -29,7 +29,9 @@ USER $UID:$GID
 ENV PATH="/home/$USER/.local/bin:$PATH"
 
 # Install Python packages.
-RUN pipx install platformio && pipx install reuse
+RUN pipx install platformio && \
+pipx install reuse && \
+rm --force --recursive /home/$USER/.cache
 
 # Tweak PlatformIO.
 RUN platformio settings set check_platformio_interval 999999 && \
