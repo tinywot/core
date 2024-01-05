@@ -14,7 +14,7 @@ ARG GID=1000
 
 # With root, install system-wide packages provided by Ubuntu.
 RUN apt-get update --yes && \
-apt-get install --yes pipx gcc gdb && \
+apt-get install --yes pipx gcc gdb graphviz doxygen && \
 rm --force --recursive /var/lib/apt/lists/*
 
 # Create a normal user.
