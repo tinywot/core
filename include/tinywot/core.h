@@ -9,7 +9,7 @@
 
   The Core part of TinyWoT is only a small portion of data structure
   definitions and helper functions. It is designed to be the platform-
-  agnostic basis of other components:
+  agnostic basis of the two other components:
 
   - Protocol Binding
   - Servient
@@ -38,41 +38,34 @@ extern "C" {
 /*!
   \brief Status codes.
 
-  These are return values used and recognized across the library. Values
-  between 1 and 127 are general status codes. Values between 128 and 255
-  indicate errors. 0 is an undefined value that is regarded as an error
-  when encountered.
+  These are return values used and recognized across the library.
 */
 enum tinywot_status {
   /*!
-    \brief An undefined status.
-
-    This can be used to initialize a `tinywot_status` variable, but is
-    seen as an error across the library.
+    \brief There is insufficient memory to complete an action.
   */
-  TINYWOT_STATUS_UNKNOWN = 0x00,
+  TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY    = -5,
 
   /*!
-    \brief The operation has been successful.
+    \brief The function is not implemented.
   */
-  TINYWOT_STATUS_SUCCESS,
+  TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED      = -4,
 
   /*!
-    \brief The end of stream (EOS) has been reached.
+    \brief Something is missing.
+
+    This can happen when a requested target and operation type cannot
+    match any handler registered in a Thing.
   */
-  TINYWOT_STATUS_END_OF_STREAM,
+  TINYWOT_STATUS_ERROR_NOT_FOUND            = -3,
 
   /*!
-    \brief The operation has been successful, but not all work has been
-    done; it hasn't been fully completed yet.
+    \brief The requested operation is not allowed.
 
-    Depending on the context, the caller is given the chance to perform
-    some action on the already returned data, then call the same
-    function again, with the right arguments to carry on, until either
-    `TINYWOT_STATUS_SUCCESS` or `TINYWOT_STATUS_END_OF_STREAM` is
-    received, when there is no more data to process.
+    This can happen when a target can be matched, but does not accept
+    the operation type requested.
   */
-  TINYWOT_STATUS_NOT_FINISHED,
+  TINYWOT_STATUS_ERROR_NOT_ALLOWED          = -2,
 
   /*!
     \brief A generic error.
@@ -81,43 +74,30 @@ enum tinywot_status {
     Applications and libraries should try to use other error codes when
     possible.
   */
-  TINYWOT_STATUS_ERROR_GENERIC = 0x80,
+  TINYWOT_STATUS_ERROR_GENERIC              = -1,
 
   /*!
-    \brief The requested operation is not allowed.
-
-    This can happen when a target can be matched, but does not accept
-    the operation type requested.
+    \brief An unknown status.
   */
-  TINYWOT_STATUS_ERROR_NOT_ALLOWED,
+  TINYWOT_STATUS_UNKNOWN                    =  0,
 
   /*!
-    \brief Something is missing.
-
-    This can happen when a requested target and operation type cannot
-    match any handler registered in a Thing.
+    \brief The operation has been successful and completed.
   */
-  TINYWOT_STATUS_ERROR_NOT_FOUND,
+  TINYWOT_STATUS_SUCCESS                    =  1,
 
   /*!
-    \brief The function is not implemented.
-  */
-  TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED,
+    \brief The operation has been successful, but not all work has been
+    done; it hasn't been fully completed yet.
 
-  /*!
-    \brief There is insufficient memory to complete an action.
+    Depending on the context, the caller is given the chance to perform
+    some action on the already returned data, then call the same
+    function again, with the right arguments to carry on, until
+    `TINYWOT_STATUS_SUCCESS` is received, when there is no more data to
+    process.
   */
-  TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY,
+  TINYWOT_STATUS_PARTIAL                    =  2,
 };
-
-/*!
-  \brief Check if the supplied `tinywot_status` hints an error.
-  \memberof tinywot_status
-
-  \param[in] self A `tinywot_status`.
-  \return `true` if `self` is an error, `false` otherwise.
-*/
-bool tinywot_status_is_error(enum tinywot_status self);
 
 /*!
   \brief Operation types.
@@ -133,183 +113,132 @@ bool tinywot_status_is_error(enum tinywot_status self);
 
   [Table 27]: https://www.w3.org/TR/wot-thing-description11/#table-well-known-operation-types
 */
-enum tinywot_operation_type {
+enum tinywot_op {                                    /* 0bqf'ty'yxwr */
   /*!
     \brief A default, invalid operation type reserved for variable
     initialization.
   */
-  TINYWOT_OPERATION_TYPE_UNKNOWN = 0,
+  TINYWOT_OP_UNKNOWN                        = 0x00u, /* 0b00'00'0000 */
 
   /*!
     \brief Identifies the read operation on Property Affordances to
     retrieve the corresponding data.
   */
-  TINYWOT_OPERATION_TYPE_READPROPERTY,
+  TINYWOT_OP_READPROPERTY                   = 0x51u, /* 0b01'01'0001 */
 
   /*!
     \brief Identifies the write operation on Property Affordances to
     update the corresponding data.
   */
-  TINYWOT_OPERATION_TYPE_WRITEPROPERTY,
+  TINYWOT_OP_WRITEPROPERTY                  = 0x52u, /* 0b01'01'0010 */
 
   /*!
     \brief Identifies the observe operation on Property Affordances to
     be notified with the new data when the Property is updated.
   */
-  TINYWOT_OPERATION_TYPE_OBSERVEPROPERTY,
+  TINYWOT_OP_OBSERVEPROPERTY                = 0x54u, /* 0b01'01'0100 */
 
   /*!
     \brief Identifies the unobserve operation on Property Affordances to
     stop the corresponding notifications.
   */
-  TINYWOT_OPERATION_TYPE_UNOBSERVEPROPERTY,
+  TINYWOT_OP_UNOBSERVEPROPERTY              = 0x58u, /* 0b01'01'1000 */
 
   /*!
     \brief Identifies the invoke operation on Action Affordances to
     perform the corresponding action.
   */
-  TINYWOT_OPERATION_TYPE_INVOKEACTION,
+  TINYWOT_OP_INVOKEACTION                   = 0x64u, /* 0b01'10'0100 */
 
   /*!
     \brief Identifies the querying operation on Action Affordances to
     get the status of the corresponding action.
   */
-  TINYWOT_OPERATION_TYPE_QUERYACTION,
+  TINYWOT_OP_QUERYACTION                    = 0x61u, /* 0b01'10'0001 */
 
   /*!
     \brief Identifies the cancel operation on Action Affordances to
     cancel the ongoing corresponding action.
   */
-  TINYWOT_OPERATION_TYPE_CANCELACTION,
+  TINYWOT_OP_CANCELACTION                   = 0x68u, /* 0b01'10'1000 */
 
   /*!
     \brief Identifies the subscribe operation on Event Affordances to be
     notified by the Thing when the event occurs.
   */
-  TINYWOT_OPERATION_TYPE_SUBSCRIBEEVENT,
+  TINYWOT_OP_SUBSCRIBEEVENT                 = 0x74u, /* 0b01'11'0100 */
 
   /*!
     \brief Identifies the unsubscribe operation on Event Affordances to
     stop the corresponding notifications.
   */
-  TINYWOT_OPERATION_TYPE_UNSUBSCRIBEEVENT,
+  TINYWOT_OP_UNSUBSCRIBEEVENT               = 0x78u, /* 0b01'11'1000 */
 
   /*!
     \brief Identifies the readallproperties operation on a Thing to
     retrieve the data of all Properties in a single interaction.
   */
-  TINYWOT_OPERATION_TYPE_READALLPROPERTIES,
+  TINYWOT_OP_READALLPROPERTIES              = 0x91u, /* 0b10'01'0001 */
 
   /*!
     \brief Identifies the writeallproperties operation on a Thing to
     update the data of all writable Properties in a single interaction.
   */
-  TINYWOT_OPERATION_TYPE_WRITEALLPROPERTIES,
+  TINYWOT_OP_WRITEALLPROPERTIES             = 0x92u, /* 0b10'01'0010 */
 
   /*!
     \brief Identifies the readmultipleproperties operation on a Thing to
     retrieve the data of selected Properties in a single interaction.
   */
-  TINYWOT_OPERATION_TYPE_READMULTIPLEPROPERTIES,
+  TINYWOT_OP_READMULTIPLEPROPERTIES         = 0xd1u, /* 0b11'01'0001 */
 
   /*!
     \brief Identifies the writemultipleproperties operation on a Thing
     to update the data of selected writable Properties in a single
     interaction.
   */
-  TINYWOT_OPERATION_TYPE_WRITEMULTIPLEPROPERTIES,
+  TINYWOT_OP_WRITEMULTIPLEPROPERTIES        = 0xd2u, /* 0b11'01'0010 */
 
   /*!
     \brief Identifies the observeallproperties operation on Properties
     to be notified with new data when any Property is updated.
   */
-  TINYWOT_OPERATION_TYPE_OBSERVEALLPROPERTIES,
+  TINYWOT_OP_OBSERVEALLPROPERTIES           = 0xd4u, /* 0b11'01'0100 */
 
   /*!
     \brief Identifies the unobserveallproperties operation on Properties
     to stop notifications from all Properties in a single interaction.
   */
-  TINYWOT_OPERATION_TYPE_UNOBSERVEALLPROPERTIES,
+  TINYWOT_OP_UNOBSERVEALLPROPERTIES         = 0xd8u, /* 0b11'01'1000 */
 
   /*!
     \brief Identifies the queryallactions operation on a Thing to get
     the status of all Actions in a single interaction.
   */
-  TINYWOT_OPERATION_TYPE_QUERYALLACTIONS,
+  TINYWOT_OP_QUERYALLACTIONS                = 0xe1u, /* 0b11'10'0001 */
 
   /*!
     \brief Identifies the subscribeallevents operation on Events to
     subscribe to notifications from all Events in a single interaction.
   */
-  TINYWOT_OPERATION_TYPE_SUBSCRIBEALLEVENTS,
+  TINYWOT_OP_SUBSCRIBEALLEVENTS             = 0xf4u, /* 0b11'11'0100 */
 
   /*!
     \brief Identifies the unsubscribeallevents operation on Events to
     unsubscribe from notifications from all Events in a single
     interaction.
   */
-  TINYWOT_OPERATION_TYPE_UNSUBSCRIBEALLEVENTS,
+  TINYWOT_OP_UNSUBSCRIBEALLEVENTS           = 0xf8u, /* 0b11'11'1000 */
 };
 
 /*!
-  \brief Response status.
-
-  Compared with `tinywot_status`, these status codes are more public
-  faced; too detailed errors are mapped into the `INTERNAL_ERROR` value
-  instead. Thus, they are more suitable for protocol bindings.
-*/
-enum tinywot_response_status {
-  /*!
-    \brief A default, invalid value reserved for variable
-    initialization.
-  */
-  TINYWOT_RESPONSE_STATUS_UNKNOWN = 0,
-
-  /*!
-    \brief The operation has been completed and successful.
-  */
-  TINYWOT_RESPONSE_STATUS_OK,
-
-  /*!
-    \brief A generic error.
-  */
-  TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR,
-
-  /*!
-    \brief The function is not implemented.
-  */
-  TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED,
-
-  /*!
-    \brief Something is missing.
-  */
-  TINYWOT_RESPONSE_STATUS_NOT_FOUND,
-
-  /*!
-    \brief The requested operation is not allowed.
-  */
-  TINYWOT_RESPONSE_STATUS_NOT_ALLOWED,
-};
-
-/*!
-  \brief Map a `tinywot_status` to a `tinywot_response_status`.
-  \memberof tinywot_response_status
-
-  \param[in] status A `tinywot_status`.
-  \return A `tinywot_response_status`.
-*/
-enum tinywot_response_status tinywot_response_status_from_tinywot_status(
-  enum tinywot_status const status
-);
-
-/*!
-  \brief Metadata about a chunk of data.
+  \brief A chunk of data and the metadata about it.
 */
 struct tinywot_payload {
   /*!
     \brief A pointer to the buffer holding the actual data.
   */
-  void *content;
+  unsigned char *content;
 
   /*!
     \brief The size of buffer pointed by `content` in byte.
@@ -335,42 +264,6 @@ struct tinywot_payload {
 };
 
 /*!
-  \brief Append the memory content pointed by `data` to a
-  `tinywot_payload`.
-  \memberof tinywot_payload
-
-  This copies the memory pointed by `data` to the end of
-  `tinywot_payload::content`.
-
-  \param[in] self An instance of `tinywot_payload`.
-  \param[in] data A pointer to a memory region containing data.
-  \param[in] data_size_byte How long is the data, in bytes.
-  \return `tinywot_status`
-*/
-enum tinywot_status tinywot_payload_append(
-  struct tinywot_payload *self,
-  void const *data,
-  size_t data_size_byte
-);
-
-/*!
-  \brief Append the NUL-terminated string pointed by `str` to a
-  `tinywot_payload`.
-  \memberof tinywot_payload
-
-  This function is like `tinywot_payload_append()` except that it
-  copies and concatenates the strings rather than blindly append.
-
-  \param[in] self An instance of `tinywot_payload`.
-  \param[in] str A pointer to a NUL-terminated string.
-  \return `tinywot_status`
-*/
-enum tinywot_status tinywot_payload_append_string(
-  struct tinywot_payload *self,
-  char const *str
-);
-
-/*!
   \brief The size of buffer reserved for `tinywot_request::target`.
 */
 #ifndef TINYWOT_REQUEST_TARGET_BUFFER_SIZE_BYTE
@@ -393,14 +286,14 @@ struct tinywot_request {
   struct tinywot_payload payload;
 
   /*!
-    \brief The intended operation type extracted from the request.
+    \brief The name of affordance.
   */
-  enum tinywot_operation_type op;
+  char const *name;
 
   /*!
-    \brief The intended submision target extracted from the request.
+    \brief The intended operation type extracted from the request.
   */
-  char target[TINYWOT_REQUEST_TARGET_BUFFER_SIZE_BYTE];
+  enum tinywot_op op;
 };
 
 /*!
@@ -419,11 +312,8 @@ struct tinywot_response {
 
   /*!
     \brief A status code for the response.
-
-    This is normally calculated from the \ref status_codes returned by
-    functions.
   */
-  enum tinywot_response_status status;
+  enum tinywot_status status;
 };
 
 /*!
@@ -487,7 +377,7 @@ struct tinywot_form {
   /*!
     \brief The allowed operation type on this form.
   */
-  enum tinywot_operation_type op;
+  enum tinywot_op op;
 
   /*!
     \brief A function pointer to the actual implementation of the form.
@@ -638,7 +528,7 @@ enum tinywot_status tinywot_thing_find_form(
   struct tinywot_thing const *self,
   struct tinywot_form **form,
   char const *target,
-  enum tinywot_operation_type op
+  enum tinywot_op op
 );
 
 /*!
@@ -689,7 +579,7 @@ enum tinywot_status tinywot_thing_add_form(
 enum tinywot_status tinywot_thing_change_form(
   struct tinywot_thing *self,
   char const *target,
-  enum tinywot_operation_type op,
+  enum tinywot_op op,
   struct tinywot_form const *form
 );
 
@@ -708,7 +598,7 @@ enum tinywot_status tinywot_thing_change_form(
 enum tinywot_status tinywot_thing_remove_form(
   struct tinywot_thing *self,
   char const *target,
-  enum tinywot_operation_type op
+  enum tinywot_op op
 );
 
 /*!
@@ -804,6 +694,18 @@ struct tinywot_protocol {
     size_t *sent_length_byte
   );
 };
+
+char const *tinywot_status_to_string(enum tinywot_status self);
+enum tinywot_status tinywot_payload_append(
+  struct tinywot_payload *self,
+  void const *data,
+  size_t data_size_byte
+);
+enum tinywot_status tinywot_payload_append_string(
+  struct tinywot_payload *self,
+  char const *str
+);
+
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -14,31 +14,72 @@
 
 #include <tinywot/core.h>
 
-bool tinywot_status_is_error(enum tinywot_status self) {
-  return self == 0 || self > 0x7f;
-}
+static char const tinywot_status_success_string[] =
+  "success";
+static char const tinywot_status_partial_string[] =
+  "partial content";
+static char const tinywot_status_error_generic_string[] =
+  "unspecified error";
+static char const tinywot_status_error_not_allowed_string[] =
+  "operation not allowed";
+static char const tinywot_status_error_not_found_string[] =
+  "target not found";
+static char const tinywot_status_error_not_implemented_string[] =
+  "function not implemented";
+static char const tinywot_status_error_not_enough_memory_string[] =
+  "insufficient memory";
+static char const tinywot_status_unknown_string[] =
+  "unknown";
 
-enum tinywot_response_status tinywot_response_status_from_tinywot_status(
-  enum tinywot_status const status
-) {
-  switch (status) {
+/*!
+  \brief Retrieve a string out of a `tinywot_status`.
+  \memberof tinywot_status
+
+  \param[in] self A `tinywot_status`.
+  \return A string representation of the provided `tinywot_status`.
+*/
+char const *tinywot_status_to_string(enum tinywot_status self) {
+  switch (self) {
+    case TINYWOT_STATUS_SUCCESS:
+      return tinywot_status_success_string;
+
+    case TINYWOT_STATUS_PARTIAL:
+      return tinywot_status_partial_string;
+
+    case TINYWOT_STATUS_ERROR_GENERIC:
+      return tinywot_status_error_generic_string;
+
     case TINYWOT_STATUS_ERROR_NOT_ALLOWED:
-      return TINYWOT_RESPONSE_STATUS_NOT_ALLOWED;
+      return tinywot_status_error_not_allowed_string;
 
     case TINYWOT_STATUS_ERROR_NOT_FOUND:
-      return TINYWOT_RESPONSE_STATUS_NOT_FOUND;
+      return tinywot_status_error_not_found_string;
 
     case TINYWOT_STATUS_ERROR_NOT_IMPLEMENTED:
-      return TINYWOT_RESPONSE_STATUS_NOT_SUPPORTED;
+      return tinywot_status_error_not_implemented_string;
 
-    case TINYWOT_STATUS_SUCCESS:
-      return TINYWOT_RESPONSE_STATUS_OK;
+    case TINYWOT_STATUS_ERROR_NOT_ENOUGH_MEMORY:
+      return tinywot_status_error_not_enough_memory_string;
 
+    case TINYWOT_STATUS_UNKNOWN: /* fall through */
     default:
-      return TINYWOT_RESPONSE_STATUS_INTERNAL_ERROR;
+      return tinywot_status_unknown_string;
   }
 }
 
+/*!
+  \brief Append the memory content pointed by `data` to a
+  `tinywot_payload`.
+  \memberof tinywot_payload
+
+  This copies the memory pointed by `data` to the end of
+  `tinywot_payload::content`.
+
+  \param[in] self An instance of `tinywot_payload`.
+  \param[in] data A pointer to a memory region containing data.
+  \param[in] data_size_byte How long is the data, in bytes.
+  \return `tinywot_status`
+*/
 enum tinywot_status tinywot_payload_append(
   struct tinywot_payload *self,
   void const *data,
@@ -58,6 +99,18 @@ enum tinywot_status tinywot_payload_append(
   return TINYWOT_STATUS_SUCCESS;
 }
 
+/*!
+  \brief Append the NUL-terminated string pointed by `str` to a
+  `tinywot_payload`.
+  \memberof tinywot_payload
+
+  This function is like `tinywot_payload_append()` except that it
+  copies and concatenates the strings rather than blindly append.
+
+  \param[in] self An instance of `tinywot_payload`.
+  \param[in] str A pointer to a NUL-terminated string.
+  \return `tinywot_status`
+*/
 enum tinywot_status tinywot_payload_append_string(
   struct tinywot_payload *self,
   char const *str
